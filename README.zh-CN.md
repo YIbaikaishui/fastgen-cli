@@ -137,23 +137,30 @@ async def list_users(session: SessionDep) -> list[User]:
 
 ## ⚖️ 它和别的方案比怎么样？
 
-### 与其他 FastAPI 代码生成工具对比
+### 与其他 FastAPI 模块生成器 / 框架对比
 
-| 工具 | 思路 | 输入 | 输出 | 后续模块管理 |
-| --- | --- | --- | --- | --- |
-| **fastgen-cli** | 特性化脚手架 | 模块名（`fastgen make module user`） | 最小骨架（schemas / service / router）+ 最佳实践底座 | ✅ 注册表 + `fastgen list` |
-| **fastapi-code-generator** | 契约优先（spec 驱动） | OpenAPI 文件 | 完整服务端代码（models、routers、schemas） | ❌ 每次都整包重新生成 |
-| **OpenAPI Generator `python-fastapi`** | 契约优先（spec 驱动） | OpenAPI 文件 | 由 spec 生成服务端骨架（BETA） | ❌ |
-| **full-stack-fastapi-template** | 全家桶模板（Copier） | 交互式问答 | 全栈：React、PostgreSQL、Docker、JWT、CI/CD | ❌ |
-| **cookiecutter-fastapi** | Cookiecutter 模板 | 交互式问答 | 结构化的后端项目 | ⚠️ 只能靠 `cruft` 整树更新 |
-| **fastapi-postgres** | 样板仓库 | 拷贝一份仓库 | 异步 SQLAlchemy + Alembic + JWT 的后端 | ❌ |
+| 工具 | 是什么 | 你必须保留的运行时依赖 | 生成的模块 |
+| --- | --- | --- | --- |
+| **fastgen-cli** | 纯生成器——裸 FastAPI | 无 | 最小骨架（schemas / service / router）+ 自动维护的注册表 |
+| **PyNest** | 构建在 FastAPI 上的框架（NestJS 风格） | `pynest-api`（`nest.core`） | 带 `@Module` / `@Controller` / `@Injectable` 与 DI 容器的模块 |
+| **FastKit** | 元框架 + CLI（Laravel 风格） | `fastkit-core` | 完整 CRUD 模块（model / schema / repository / service / router） |
+| **Gondola** | 强调约定的 CLI（Rails 风格） | `gondola-cli` + 默认 PostgreSQL 技术栈 | models / routers / services / mailers / tests，Alembic 迁移 |
+| **FastStack** | 完整框架（Django 风格） | `faststack-frame` | 应用模块（models / routes / schemas / services / admin） |
+| **RapidKit** | 模块引擎 + CLI（同时支持 FastAPI 与 NestJS） | `rapidkit-core` + npx/poetry 工具链 | Kits（`fastapi.standard` / `fastapi.ddd`）+ 可安装的模块目录 |
 
-这些工具回答的是不同的问题：
+#### fastgen 的优势在哪
 
-- **fastapi-code-generator / OpenAPI Generator** 属于*契约优先*：当你以 OpenAPI spec 为准，它们能把 spec 变成可运行代码。但每次改动都要重新生成，也不帮你维护后续的模块组织。
-- **full-stack-fastapi-template** 是官方*全家桶*起步模板——想要开箱即用的完整产品（前端、部署、认证）时最合适。但它很重，你要在它的结构里成长。
-- **cookiecutter-fastapi / fastapi-postgres** 一次性拷贝固定结构。之后可以用 `cruft` 跟进更新，但本质仍是*快照*——没有"以后再添加一个模块"的概念。
-- **fastgen-cli** 是唯一围绕*增量式模块管理*设计的：先用 `fastgen new` 生成一个精简、可运行的底座，再用 `fastgen make module` 逐个特性地生长，注册表让结构始终一目了然。它是互补的——有契约就走 spec 驱动的生成器；也可以在任何 starter 之上叠加 fastgen 获得模块管理能力。
+- **零运行时锁定。** fastgen 生成的一切都是基于裸 FastAPI + SQLAlchemy 的纯 Python 代码，运行时完全不需要 `fastgen`。其他工具都自带框架/运行时，你的项目得一直依赖它们。
+- **没有需要学习的新概念。** 没有 `@Module`/`@Injectable` 装饰器、没有 DI 容器、没有 repository 基类、没有 workspace 元数据。骨架用的都是你本来就会的写法（`SessionDep = Annotated[AsyncSession, Depends(get_session)]`）。
+- **增量式，而不是一次性全有。** `fastgen make module` 是在*已有*项目（`src/` 或 `app/` 布局）里生长，而不是逼你从一开始就进入某个框架——任何 FastAPI 项目（包括上面这些工具的项目）都能叠加使用。
+- **对 AI/助手友好。** 自动维护的注册表（`src/modules/__init__.py`）+ `fastgen list`，让人类和 AI 助手都能一眼看清整个模块结构。
+- **绝不覆盖。** `src/core/` 只在缺失或为空时生成。
+
+#### 客观的取舍
+
+其他工具帮你生成的**更多**：FastKit 的完整 CRUD 路由、Gondola 的迁移/mailers/tests、PyNest 面向复杂企业应用的依赖注入、RapidKit 的模块升级/回滚生命周期。想要这些能力、且能接受其运行时与约定时，选它们。想要一个精简、标准、零耦合、由你自己塑造的底座时，选 fastgen。
+
+> **契约优先生成器**（`fastapi-code-generator`、OpenAPI Generator `python-fastapi`）是另一类：它们把 OpenAPI spec 变成代码。当你的 spec 是唯一事实来源时，它们与 fastgen 互补。
 
 ### 与直接用 `uv init` 起步对比
 

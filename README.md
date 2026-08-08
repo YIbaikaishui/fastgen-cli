@@ -139,23 +139,30 @@ async def list_users(session: SessionDep) -> list[User]:
 
 ## ⚖️ How does it compare?
 
-### vs. other FastAPI code generators
+### vs. other FastAPI module generators & frameworks
 
-| Tool | Approach | Input | Output | Ongoing module mgmt |
-| --- | --- | --- | --- | --- |
-| **fastgen-cli** | Feature-based scaffolding | Module name (`fastgen make module user`) | Minimal skeleton (schemas / service / router) + best-practice base | ✅ registry + `fastgen list` |
-| **fastapi-code-generator** | Contract-first (spec-driven) | OpenAPI file | Complete server code (models, routers, schemas) | ❌ regenerates the whole app |
-| **OpenAPI Generator `python-fastapi`** | Contract-first (spec-driven) | OpenAPI file | Server skeleton from spec (BETA) | ❌ |
-| **full-stack-fastapi-template** | Batteries-included template (Copier) | Interactive Q&A | Full stack: React, PostgreSQL, Docker, JWT, CI/CD | ❌ |
-| **cookiecutter-fastapi** | Cookiecutter template | Interactive Q&A | Structured backend project | ⚠️ whole-tree updates via `cruft` |
-| **fastapi-postgres** | Boilerplate starter | Copy a repo | Backend with async SQLAlchemy + Alembic + JWT | ❌ |
+| Tool | What it is | Runtime dependency you must keep | Generated module |
+| --- | --- | --- | --- |
+| **fastgen-cli** | Generator only — plain FastAPI | None | Minimal skeleton (schemas / service / router) + auto-maintained registry |
+| **PyNest** | Framework on FastAPI (NestJS-style) | `pynest-api` (`nest.core`) | Module with `@Module` / `@Controller` / `@Injectable`, DI container |
+| **FastKit** | Meta-framework + CLI (Laravel-style) | `fastkit-core` | Full CRUD module (model / schema / repository / service / router) |
+| **Gondola** | CLI with Rails-like conventions | `gondola-cli` + default PostgreSQL stack | Models / routers / services / mailers / tests, Alembic migrations |
+| **FastStack** | Full framework (Django-like) | `faststack-frame` | App module (models / routes / schemas / services / admin) |
+| **RapidKit** | Module engine + CLI (FastAPI & NestJS) | `rapidkit-core` + npx/poetry toolchain | Kits (`fastapi.standard` / `fastapi.ddd`) + installable module catalog |
 
-These tools answer different questions:
+#### Where fastgen stands out
 
-- **fastapi-code-generator / OpenAPI Generator** are *contract-first*: when your OpenAPI spec is the source of truth, they turn it into working code. But every change means regenerating, and they don't help you organize features after the fact.
-- **full-stack-fastapi-template** is the official *batteries-included* starter — ideal when you want a complete product (frontend, deployment, auth) from day one. It's heavy, and you grow inside its structure.
-- **cookiecutter-fastapi / fastapi-postgres** copy a fixed structure once. You can keep them updated with `cruft`, but they stay *snapshots* — there's no notion of "add another module later".
-- **fastgen-cli** is the only one built around *incremental module management*: scaffold a lean, runnable base once (`fastgen new`), then grow feature by feature (`fastgen make module`), with the registry keeping everything discoverable. It's complementary — use a spec-driven generator when you have a contract, or adopt fastgen on top of any starter to get module management.
+- **Zero runtime lock-in.** Everything fastgen generates is plain Python on top of vanilla FastAPI + SQLAlchemy — nothing requires `fastgen` at runtime. The others all ship their own framework/runtime that your project keeps depending on.
+- **No new concepts to learn.** No `@Module`/`@Injectable` decorators, no DI container, no repository base classes, no workspace metadata. The skeleton uses idioms you already know (`SessionDep = Annotated[AsyncSession, Depends(get_session)]`).
+- **Incremental, not all-or-nothing.** `fastgen make module` grows an *existing* project (`src/` or `app/` layout) instead of forcing you to start inside a framework — you can adopt it on top of any FastAPI project, including the ones above.
+- **AI/agent-friendly.** An auto-maintained registry (`src/modules/__init__.py`) plus `fastgen list` means both humans and AI agents see the whole module structure at a glance.
+- **Never overwrites.** `src/core/` is only generated when missing or empty.
+
+#### Honest trade-off
+
+The others generate **more for you**: FastKit's full CRUD router, Gondola's migrations/mailers/tests, PyNest's dependency injection for complex enterprise apps, RapidKit's module upgrade/rollback lifecycle. Choose them when you want those batteries and can accept their runtime and conventions. Choose fastgen when you want a lean, standard, zero-coupling base that you shape yourself.
+
+> **Contract-first generators** (`fastapi-code-generator`, OpenAPI Generator `python-fastapi`) are a different category: they turn an OpenAPI spec into code and complement fastgen when your spec is the source of truth.
 
 ### vs. starting with `uv init`
 
