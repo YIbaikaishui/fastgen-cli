@@ -137,18 +137,23 @@ async def list_users(session: SessionDep) -> list[User]:
 
 ## ⚖️ 它和别的方案比怎么样？
 
-### 与其他代码生成工具对比
+### 与其他 FastAPI 代码生成工具对比
 
-| 工具 | 理念 | 项目结构 | 后续模块管理 | FastAPI 专用 |
+| 工具 | 思路 | 输入 | 输出 | 后续模块管理 |
 | --- | --- | --- | --- | --- |
-| **fastgen-cli** | 有主见、最小骨架、零配置 | 最佳实践 `src/` 布局 | ✅ 自动注册表 + `make module` / `list` | ✅ |
-| **`nest new`**（NestJS） | 原版 nest-cli，同一思路 | 有主见 | ✅ | ❌ Node.js/TS |
-| **cookiecutter** | 面向任意内容的可复用模板 | 模板说了算 | ❌ 静态快照 | 取决于模板 |
-| **Full-stack FastAPI 模板** | 全家桶（Docker、认证等） | 庞大的、强约定的单体 | ❌ 手动 | ✅ |
-| **`uv init`** | 最简 Python 项目 | `pyproject.toml` + hello world | ❌ | ❌ |
-| **让 LLM 手写脚手架** | 每次聊天临时拼 | 每次运行都不一致 | ❌ | 偶尔 |
+| **fastgen-cli** | 特性化脚手架 | 模块名（`fastgen make module user`） | 最小骨架（schemas / service / router）+ 最佳实践底座 | ✅ 注册表 + `fastgen list` |
+| **fastapi-code-generator** | 契约优先（spec 驱动） | OpenAPI 文件 | 完整服务端代码（models、routers、schemas） | ❌ 每次都整包重新生成 |
+| **OpenAPI Generator `python-fastapi`** | 契约优先（spec 驱动） | OpenAPI 文件 | 由 spec 生成服务端骨架（BETA） | ❌ |
+| **full-stack-fastapi-template** | 全家桶模板（Copier） | 交互式问答 | 全栈：React、PostgreSQL、Docker、JWT、CI/CD | ❌ |
+| **cookiecutter-fastapi** | Cookiecutter 模板 | 交互式问答 | 结构化的后端项目 | ⚠️ 只能靠 `cruft` 整树更新 |
+| **fastapi-postgres** | 样板仓库 | 拷贝一份仓库 | 异步 SQLAlchemy + Alembic + JWT 的后端 | ❌ |
 
-**fastgen-cli** 位于"极简但全要自己干"（`uv init`）和"全家桶且约定过多"（full-stack 模板）之间。它给你一个完整、可运行的 FastAPI 底座，**并且**长期维护模块结构——这是任何静态模板生成器都做不到的。
+这些工具回答的是不同的问题：
+
+- **fastapi-code-generator / OpenAPI Generator** 属于*契约优先*：当你以 OpenAPI spec 为准，它们能把 spec 变成可运行代码。但每次改动都要重新生成，也不帮你维护后续的模块组织。
+- **full-stack-fastapi-template** 是官方*全家桶*起步模板——想要开箱即用的完整产品（前端、部署、认证）时最合适。但它很重，你要在它的结构里成长。
+- **cookiecutter-fastapi / fastapi-postgres** 一次性拷贝固定结构。之后可以用 `cruft` 跟进更新，但本质仍是*快照*——没有"以后再添加一个模块"的概念。
+- **fastgen-cli** 是唯一围绕*增量式模块管理*设计的：先用 `fastgen new` 生成一个精简、可运行的底座，再用 `fastgen make module` 逐个特性地生长，注册表让结构始终一目了然。它是互补的——有契约就走 spec 驱动的生成器；也可以在任何 starter 之上叠加 fastgen 获得模块管理能力。
 
 ### 与直接用 `uv init` 起步对比
 

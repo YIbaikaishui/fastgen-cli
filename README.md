@@ -139,18 +139,23 @@ async def list_users(session: SessionDep) -> list[User]:
 
 ## ⚖️ How does it compare?
 
-### vs. other code generators
+### vs. other FastAPI code generators
 
-| Tool | Philosophy | Project structure | Ongoing module management | FastAPI-specific |
+| Tool | Approach | Input | Output | Ongoing module mgmt |
 | --- | --- | --- | --- | --- |
-| **fastgen-cli** | Opinionated, minimal skeleton, zero config | Best-practice `src/` layout | ✅ auto registry + `make module` / `list` | ✅ |
-| **`nest new`** (NestJS) | The original nest-cli, same idea | Opinionated | ✅ | ❌ Node.js/TS |
-| **cookiecutter** | Reusable templates for anything | Whatever the template says | ❌ static snapshot | Depends on the template |
-| **Full-stack FastAPI template** | Batteries included (Docker, auth, …) | Large opinionated monolith | ❌ manual | ✅ |
-| **`uv init`** | Minimal Python project | `pyproject.toml` + hello world | ❌ | ❌ |
-| **LLM hand-scaffolding** | Ad-hoc, per-chat | Inconsistent between runs | ❌ | Sometimes |
+| **fastgen-cli** | Feature-based scaffolding | Module name (`fastgen make module user`) | Minimal skeleton (schemas / service / router) + best-practice base | ✅ registry + `fastgen list` |
+| **fastapi-code-generator** | Contract-first (spec-driven) | OpenAPI file | Complete server code (models, routers, schemas) | ❌ regenerates the whole app |
+| **OpenAPI Generator `python-fastapi`** | Contract-first (spec-driven) | OpenAPI file | Server skeleton from spec (BETA) | ❌ |
+| **full-stack-fastapi-template** | Batteries-included template (Copier) | Interactive Q&A | Full stack: React, PostgreSQL, Docker, JWT, CI/CD | ❌ |
+| **cookiecutter-fastapi** | Cookiecutter template | Interactive Q&A | Structured backend project | ⚠️ whole-tree updates via `cruft` |
+| **fastapi-postgres** | Boilerplate starter | Copy a repo | Backend with async SQLAlchemy + Alembic + JWT | ❌ |
 
-**fastgen-cli** sits between "minimal but you do everything" (`uv init`) and "huge monolith with opinions baked in" (full-stack templates). It gives you a complete, runnable FastAPI base *and* keeps the module structure maintained over time — something static template generators never do.
+These tools answer different questions:
+
+- **fastapi-code-generator / OpenAPI Generator** are *contract-first*: when your OpenAPI spec is the source of truth, they turn it into working code. But every change means regenerating, and they don't help you organize features after the fact.
+- **full-stack-fastapi-template** is the official *batteries-included* starter — ideal when you want a complete product (frontend, deployment, auth) from day one. It's heavy, and you grow inside its structure.
+- **cookiecutter-fastapi / fastapi-postgres** copy a fixed structure once. You can keep them updated with `cruft`, but they stay *snapshots* — there's no notion of "add another module later".
+- **fastgen-cli** is the only one built around *incremental module management*: scaffold a lean, runnable base once (`fastgen new`), then grow feature by feature (`fastgen make module`), with the registry keeping everything discoverable. It's complementary — use a spec-driven generator when you have a contract, or adopt fastgen on top of any starter to get module management.
 
 ### vs. starting with `uv init`
 
