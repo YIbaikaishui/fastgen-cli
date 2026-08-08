@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_session
+from {{ source }}.core.database import get_session
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 

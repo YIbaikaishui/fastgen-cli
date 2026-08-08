@@ -12,6 +12,7 @@ from rich.table import Table
 from . import __version__
 from .generators.core import generate_core
 from .generators.module import generate_module
+from .generators.project import generate_project
 from .generators.registry import list_registered, register_module
 from .writers import console, report
 
@@ -33,6 +34,48 @@ def main(
         raise typer.Exit()
 
 
+@app.command("new")
+def new_project(
+    name: str = typer.Argument(..., help="Project name, or '.' to scaffold into --dir."),
+    directory: Path = typer.Option(
+        Path.cwd(), "--dir", "-d", help="Parent directory for the new project."
+    ),
+    title: str | None = typer.Option(None, "--title", help="Human-readable app title."),
+    description: str = typer.Option("", "--description", help="Short project description."),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Preview files without writing."),
+    force: bool = typer.Option(False, "--force", "-f", help="Overwrite an existing project."),
+) -> None:
+    """Scaffold a new best-practice FastAPI project.
+
+    Generates a ``src``-layout project: ``.env``, ``src/main.py``, ``src/core/``
+    (config + async database), the ``src/modules/`` registry, a ``tests/`` suite,
+    plus ``pyproject.toml`` / ``.gitignore`` / ``.python-version``. The project is
+    immediately manageable with ``fastgen make module`` / ``fastgen list``.
+    """
+    target = directory if name == "." else directory / name
+    if target.exists() and any(target.iterdir()) and not force:
+        typer.secho(
+            f"Directory {target} already exists and is not empty. Use --force to overwrite.",
+            fg=typer.colors.RED,
+        )
+        raise typer.Exit(code=1)
+    files = generate_project(
+        name,
+        target,
+        title=title,
+        description=description,
+        force=force,
+        dry_run=dry_run,
+    )
+    report(files, dry_run=dry_run)
+    if not dry_run:
+        typer.secho(f"Project created at {target}", fg=typer.colors.GREEN)
+        typer.secho(
+            f"cd {target} && uv sync && uv run uvicorn src.main:app --reload",
+            fg=typer.colors.CYAN,
+        )
+
+
 @make_app.command("module")
 def make_module(
     feature: str = typer.Argument(..., help="Feature name, e.g. user"),
@@ -44,13 +87,13 @@ def make_module(
 
     Generates a minimal module skeleton (schemas / service / router /
     __init__) that outlines the module's shape; fill in the entity fields and
-    business logic yourself. The shared app/core/ database scaffolding and the
+    business logic yourself. The shared core/ database scaffolding and the
     module registry are created automatically.
     """
     files = generate_module(feature, directory, force=force, dry_run=dry_run)
     files += generate_core(directory, dry_run=dry_run)
     files.append(register_module(directory, feature, dry_run=dry_run))
-    report(files)
+    report(files, dry_run=dry_run)
     skipped = [f for f in files if f.status == "skipped"]
     if skipped and not force:
         typer.secho(

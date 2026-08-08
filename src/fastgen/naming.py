@@ -24,6 +24,10 @@ def to_pascal(name: str) -> str:
     return "".join(p.capitalize() for p in _split(name))
 
 
+def to_title(name: str) -> str:
+    return " ".join(p.capitalize() for p in _split(name))
+
+
 def to_kebab(name: str) -> str:
     return "-".join(p.lower() for p in _split(name))
 
