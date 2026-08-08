@@ -11,6 +11,8 @@ Zero-config. One command. Fill in the business logic yourself.
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![PyPI downloads](https://img.shields.io/pypi/dm/fastgen-cli)](https://pypi.org/project/fastgen-cli/)
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 </div>
 
 ---
@@ -152,4 +154,4 @@ Lint with `uv run ruff check src`.
 
 ## 📄 License
 
-MIT © [YIbaikaishui](LICENSE)
+MIT © 一白开水
