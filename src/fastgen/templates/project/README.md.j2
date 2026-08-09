@@ -6,8 +6,18 @@
 
 ```bash
 uv sync                          # install dependencies
+uv run alembic upgrade head      # create/apply DB schema (Alembic manages migrations)
 uv run uvicorn src.main:app --reload
 # docs at http://localhost:8000/docs
+```
+
+## Migrations
+
+After changing a model, generate and apply a migration:
+
+```bash
+uv run alembic revision --autogenerate -m "what changed"
+uv run alembic upgrade head
 ```
 
 ## Tests
@@ -24,9 +34,10 @@ src/
 ├── core/                    # shared infra (never overwritten by fastgen)
 │   ├── config.py            # pydantic-settings, reads .env
 │   └── database.py          # async SQLAlchemy Base / engine / get_session
-└── modules/
-    └── __init__.py          # 📇 module registry (auto-maintained by fastgen)
+├── modules/
+│   └── __init__.py          # 📇 module registry (auto-maintained by fastgen)
 tests/                       # pytest suite
+migrations/                  # Alembic migrations (alembic.ini at project root)
 ```
 
 Add a feature module with:

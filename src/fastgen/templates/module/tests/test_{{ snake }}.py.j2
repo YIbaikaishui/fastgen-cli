@@ -1,0 +1,33 @@
+from httpx import AsyncClient
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncEngine
+
+from {{ source }}.modules import modules
+from {{ source }}.modules.{{ snake }}.router import router
+
+
+def test_module_registered() -> None:
+    assert modules["{{ snake }}"] == "{{ source }}.modules.{{ snake }}"
+
+
+def test_router_prefix() -> None:
+    assert router.prefix == "/{{ plural }}"
+
+
+async def test_db_available(db_engine: AsyncEngine) -> None:
+    async with db_engine.connect() as conn:
+        result = await conn.execute(text("SELECT 1"))
+        assert result.scalar_one() == 1
+
+
+async def test_health(client: AsyncClient) -> None:
+    """Smoke test: the app boots and the test-DB dependency override is wired."""
+    response = await client.get("/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+# Add endpoint tests once router endpoints exist, e.g.:
+# async def test_create_{{ snake }}(client: AsyncClient) -> None:
+#     response = await client.post("/{{ plural }}", json={...})
+#     assert response.status_code == 201

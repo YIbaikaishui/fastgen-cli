@@ -38,8 +38,9 @@ def render_tree(
     env = _env(template_dir)
     files: list[GeneratedFile] = []
     for tmpl in sorted(src.rglob("*.j2")):
-        rel = tmpl.relative_to(src)
-        rendered = env.get_template(str(rel)).render(**context)
+        rel_template = tmpl.relative_to(src)
+        rel = Path(env.from_string(str(rel_template)).render(**context))
+        rendered = env.get_template(str(rel_template)).render(**context)
         target = dest_dir / rel.with_suffix("")
         files.append(write_file(target, rendered, force=force, dry_run=dry_run))
     return files

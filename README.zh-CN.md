@@ -21,11 +21,12 @@ FastAPI 以"不强制结构"著称——自由是好事，但项目也容易失�
 
 **fastgen-cli** 正是来解决这个问题的。它管理**模块结构**，不碰你的业务代码：
 
-- 🏗️ **一键脚手架整个项目**——`fastgen new my-app` 生成一个最佳实践的 `src/` 布局 FastAPI 项目（`.env`、`src/main.py`、`src/core/`、模块注册表、`tests/`），开箱即跑
+- 🏗️ **一键脚手架整个项目**——`fastgen new my-app` 生成一个最佳实践的 `src/` 布局 FastAPI 项目（`.env`、`src/main.py`、`src/core/`、模块注册表、`tests/`、Alembic 迁移），开箱即跑
 - 🗂️ **一个模块 = 一个文件夹**（`<src>/modules/<feature>/`），每次都是统一的结构
-- 🧩 **最小骨架**——实体类、业务层、路由 + 共享 session 依赖。刚好够"看懂"模块，绝不多生成代码挡住你
+- 🧩 **最小骨架**——ORM 模型、schemas、业务层、路由 + 共享 session 依赖。刚好够"看懂"模块，绝不多生成代码挡住你
 - 📇 **自动维护注册表**——`app/modules/__init__.py` 记录每个模块；AI 和开发者读它即可瞬间了解项目
 - 🔌 **共享 DB 核心**只生成一次——`app/core/` 内含 pydantic-settings 配置 + 异步 SQLAlchemy `get_session`（最佳实践：`expire_on_commit=False`、`AsyncAttrs`）
+- 🔁 **内置 Alembic 迁移**——`alembic upgrade head` 演进表结构，不用再删 `app.db`；autogenerate 自动识别模型变更
 - 🛡️ **绝不覆盖你的代码**——只生成缺失或为空的内容
 
 ---
@@ -45,11 +46,11 @@ uv add fastgen-cli
 ## 🚀 快速开始
 
 ```bash
-# 脚手架整个项目（src/ 布局：.env、src/main.py、src/core/、tests/）
+# 脚手架整个项目（src/ 布局：.env、src/main.py、src/core/、tests/、Alembic）
 fastgen new my-app
-cd my-app && uv sync && uv run uvicorn src.main:app --reload
+cd my-app && uv sync && uv run alembic upgrade head && uv run uvicorn src.main:app --reload
 
-# 生成 user 模块（创建 src/modules/user/ + src/core/ + 注册表）
+# 生成 user 模块（创建 src/modules/user/ + src/core/ + 注册表 + 测试）
 fastgen make module user
 
 # 查看所有已注册模块及其边界
@@ -93,6 +94,11 @@ my-app/
 │   │   └── database.py         # Base（AsyncAttrs）、异步 engine、get_session
 │   └── modules/
 │       └── __init__.py         # 📇 模块注册表（自动维护）
+├── migrations/                  # Alembic 迁移（alembic.ini 在项目根目录）
+│   ├── env.py                   # 异步环境；DATABASE_URL 来自配置，模型来自注册表
+│   ├── script.py.mako
+│   └── versions/
+│       └── 0001_initial.py      # 空基线版本
 └── tests/
     ├── __init__.py
     ├── conftest.py             # httpx ASGI client fixture
@@ -111,10 +117,19 @@ app/  （由 `fastgen new` 生成的项目则为 src/）
     ├── __init__.py              # 📇 模块注册表（自动维护）
     └── user/
         ├── __init__.py          # 对外暴露 router
-        ├── schemas.py           # 实体骨架：  class User(BaseModel): pass
-        ├── service.py           # 业务层边界：  class UserService
-        └── router.py            # APIRouter + SessionDep（已接好异步依赖注入）
+        ├── model.py             # SQLAlchemy 实体（id 主键，__tablename__ = 复数）
+        ├── schemas.py           # UserBase / UserCreate / UserUpdate / UserRead
+        │                        # UserRead 带 from_attributes=True，ORM 对象可直接序列化
+        ├── service.py           # 业务层：UserError 异常层级 + 异步 CRUD stub
+        ├── router.py            # APIRouter + SessionDep（已接好异步依赖注入）
+        └── tests/               # 内存 SQLite 测试库 + get_session 覆盖
+            ├── conftest.py
+            └── test_user.py
 ```
+
+**路由自动挂载**：`fastgen make module` 会幂等地把 `main.py` 同步为从注册表
+`importlib` 导入各模块并 `app.include_router(...)`——新增模块无需手改 `main.py`
+（由 `fastgen: auto-mount` 标记注释守护）。
 
 **`router.py`** 已经接好了共享 session 依赖，你只需添加端点：
 
@@ -135,13 +150,31 @@ async def list_users(session: SessionDep) -> list[User]:
 
 ---
 
+## 🔁 迁移（Alembic）
+
+`fastgen new` 内置 Alembic 脚手架（`alembic.ini` + `migrations/`），已接好你的配置和
+模型——表结构由迁移管理，而不是启动时 `create_all`，开发时演进 schema 不用再删 `app.db`：
+
+```bash
+uv run alembic upgrade head               # 应用所有待执行迁移（含基线）
+uv run alembic revision --autogenerate -m "add user email"   # 模型 diff -> 新迁移
+uv run alembic upgrade head               # 应用它
+uv run alembic downgrade -1               # 回滚一步
+```
+
+- `migrations/env.py` 会导入注册表里每个模块的 `model`，autogenerate 才能看到全部表。
+- 给**已有项目**加 Alembic：`fastgen init alembic` 幂等写入脚手架（绝不覆盖）。
+  若数据库此前由 `create_all` 创建，用 `uv run alembic stamp head` 采纳现状，或删掉开发库后 `upgrade head` 重建。
+
+---
+
 ## ⚖️ 它和别的方案比怎么样？
 
 ### 与其他 FastAPI 模块生成器 / 框架对比
 
 | 工具 | 是什么 | 你必须保留的运行时依赖 | 生成的模块 |
 | --- | --- | --- | --- |
-| **fastgen-cli** | 纯生成器——裸 FastAPI | 无 | 最小骨架（schemas / service / router）+ 自动维护的注册表 |
+| **fastgen-cli** | 纯生成器——裸 FastAPI | 无 | 模型 / schemas / service / router / tests + 自动维护的注册表；Alembic 迁移 |
 | **PyNest** | 构建在 FastAPI 上的框架（NestJS 风格） | `pynest-api`（`nest.core`） | 带 `@Module` / `@Controller` / `@Injectable` 与 DI 容器的模块 |
 | **FastKit** | 元框架 + CLI（Laravel 风格） | `fastkit-core` | 完整 CRUD 模块（model / schema / repository / service / router） |
 | **Gondola** | 强调约定的 CLI（Rails 风格） | `gondola-cli` + 默认 PostgreSQL 技术栈 | models / routers / services / mailers / tests，Alembic 迁移 |
@@ -158,7 +191,7 @@ async def list_users(session: SessionDep) -> list[User]:
 
 #### 客观的取舍
 
-其他工具帮你生成的**更多**：FastKit 的完整 CRUD 路由、Gondola 的迁移/mailers/tests、PyNest 面向复杂企业应用的依赖注入、RapidKit 的模块升级/回滚生命周期。想要这些能力、且能接受其运行时与约定时，选它们。想要一个精简、标准、零耦合、由你自己塑造的底座时，选 fastgen。
+其他工具帮你生成的**更多**：FastKit 的完整 CRUD 路由、Gondola 的 mailers、PyNest 面向复杂企业应用的依赖注入、RapidKit 的模块升级/回滚生命周期。想要这些能力、且能接受其运行时与约定时，选它们。想要一个精简、标准、零耦合、由你自己塑造的底座时，选 fastgen。
 
 > **契约优先生成器**（`fastapi-code-generator`、OpenAPI Generator `python-fastapi`）是另一类：它们把 OpenAPI spec 变成代码。当你的 spec 是唯一事实来源时，它们与 fastgen 互补。
 
@@ -168,7 +201,7 @@ async def list_users(session: SessionDep) -> list[User]:
 
 | | `uv init` | `fastgen new` |
 | --- | --- | --- |
-| 得到什么 | `pyproject.toml` + `main.py` hello world | 完整 FastAPI 应用：`.env`、`src/main.py`（lifespan + `/health`）、`src/core/`（pydantic-settings + 异步 SQLAlchemy）、模块注册表、`tests/`、ruff/pytest 配置 |
+| 得到什么 | `pyproject.toml` + `main.py` hello world | 完整 FastAPI 应用：`.env`、`src/main.py`（lifespan + `/health`）、`src/core/`（pydantic-settings + 异步 SQLAlchemy）、模块注册表、`tests/`、Alembic 迁移、ruff/pytest 配置 |
 | 接下来你要 | 手写依赖、`src/` 布局、lifespan/配置/数据库/测试 | 只管写业务逻辑 |
 | 最终结构 | 每个开发者都不同 | 所有项目完全一致 |
 | 后续模块管理 | 无 | `fastgen make module` 维护注册表，可随时 `fastgen list` |
@@ -188,8 +221,9 @@ async def list_users(session: SessionDep) -> list[User]:
 
 | 命令 | 说明 |
 | --- | --- |
-| `fastgen new <name>` | 脚手架一个新的最佳实践 `src/` 布局 FastAPI 项目 |
-| `fastgen make module <feature>` | 生成模块骨架、创建 `src/core/` 并登记注册表 |
+| `fastgen new <name>` | 脚手架一个新的最佳实践 `src/` 布局 FastAPI 项目（core + 注册表 + tests + Alembic） |
+| `fastgen make module <feature>` | 生成模块骨架（model / schemas / service / router / tests）、自动挂载路由并登记注册表 |
+| `fastgen init alembic` | 给已有项目添加 Alembic 迁移脚手架（幂等） |
 | `fastgen list` | 列出已注册模块、import 路径和用途 |
 | `fastgen --version` / `-V` | 显示版本号 |
 
@@ -197,10 +231,10 @@ async def list_users(session: SessionDep) -> list[User]:
 
 | 参数 | 适用命令 | 说明 |
 | --- | --- | --- |
-| `--dir <path>` / `-d` | `new`、`make module`、`list` | 目标项目根目录（默认当前目录） |
+| `--dir <path>` / `-d` | `new`、`make module`、`init alembic`、`list` | 目标项目根目录（默认当前目录） |
 | `--title <name>` | `new` | 人类可读的应用标题（默认取项目名） |
 | `--description <text>` | `new` | 简短的项目描述 |
-| `--dry-run` | `new`、`make module` | 预览将要生成的文件，不写入任何内容 |
+| `--dry-run` | `new`、`make module`、`init alembic` | 预览将要生成的文件，不写入任何内容 |
 | `--force` / `-f` | `new`、`make module` | 覆盖已存在的文件 |
 
 ---
@@ -208,20 +242,21 @@ async def list_users(session: SessionDep) -> list[User]:
 ## 📐 固定约定
 
 - **布局**——`fastgen new` 生成 `src/` 布局并记录到 `.fastgen.json`。fastgen 依次按 `.fastgen.json`、自动探测、最后回退到 `app/`（兼容旧项目）的顺序解析布局。
-- **模块**位于 `<src>/modules/<feature>/`——一个文件夹对应一个业务单元。
-- **路由**暴露 `prefix="/<复数形式>"`（REST 风格），复用 `<src>.core.database` 里的 `SessionDep`。
+- **模块**位于 `<src>/modules/<feature>/`——一个文件夹对应一个业务单元，内含 `model.py`、`schemas.py`（`XBase`/`XCreate`/`XUpdate`/`XRead`，`XRead` 带 `from_attributes`）、`service.py`、`router.py`、`tests/`。
+- **路由**暴露 `prefix="/<复数形式>"`（REST 风格），复用 `<src>.core.database` 里的 `SessionDep`，并从注册表**自动挂载**进 `main.py`（由 `fastgen: auto-mount` 标记守护——别删）。
 - **注册表**——`<src>/modules/__init__.py` 保存"模块名 → import 路径"映射，由 fastgen 自动保持同步，请勿手改。
 - **核心**——`<src>/core/config.py` 和 `database.py` 只在**缺失或为空**时生成。已有代码即使加 `--force` 也绝不触碰。
+- **表结构**——由 Alembic 迁移管理（启动时不再 `create_all`）。
 
 ---
 
 ## 🔭 Roadmap
 
 - [x] `new` —— 脚手架整个最佳实践 `src/` 布局项目
-- [x] `make module` —— schemas + service 骨架
+- [x] `make module` —— model / schemas / service / router / tests + 自动挂载
 - [x] 模块注册表 + `fastgen list`
+- [x] Alembic 迁移（`init alembic`、autogenerate、upgrade）
 - [ ] `make resource` —— 完整 CRUD 路由生成
-- [ ] Alembic 迁移提示
 
 ---
 

@@ -40,6 +40,10 @@ def test_new_creates_best_practice_layout(proj: Path) -> None:
         "tests/__init__.py",
         "tests/conftest.py",
         "tests/test_health.py",
+        "alembic.ini",
+        "migrations/env.py",
+        "migrations/script.py.mako",
+        "migrations/versions/0001_initial.py",
     ]
     for rel in expected:
         assert (proj / rel).exists(), f"missing {rel}"
@@ -48,9 +52,18 @@ def test_new_creates_best_practice_layout(proj: Path) -> None:
 def test_new_src_layout_files(proj: Path) -> None:
     assert ".env" in _read(proj / ".gitignore")
     assert _read(proj / ".env").startswith("DATABASE_URL=")
-    assert "from src.core.database import Base, engine" in _read(proj / "src/main.py")
+    assert "from src.core.database import engine" in _read(proj / "src/main.py")
     assert "from src.main import app" in _read(proj / "tests/conftest.py")
     assert 'name = "my_app"' in _read(proj / "pyproject.toml")
+
+
+def test_generated_async_generators_use_async_generator_annotation(proj: Path) -> None:
+    main = _read(proj / "src/main.py")
+    assert "AsyncIterator" not in main
+    assert "async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]" in main
+    conftest = _read(proj / "tests/conftest.py")
+    assert "AsyncIterator" not in conftest
+    assert "async def client() -> AsyncGenerator[AsyncClient, None]" in conftest
 
 
 def test_new_writes_layout_config(proj: Path) -> None:

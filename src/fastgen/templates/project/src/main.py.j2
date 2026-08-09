@@ -8,28 +8,29 @@ requires no edits here.
 from __future__ import annotations
 
 import importlib
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from {{ source }}.core.database import Base, engine
+from {{ source }}.core.database import engine
 from {{ source }}.modules import modules
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    # Schema is managed by Alembic: `uv run alembic upgrade head`.
     yield
     await engine.dispose()
 
 
 app = FastAPI(title={{ title|tojson }}, version={{ version|tojson }}, lifespan=lifespan)
 
-for _name, _import_path in modules.items():
+# --- fastgen: auto-mount (do not remove) ---
+for _import_path in modules.values():
     _module = importlib.import_module(_import_path)
     app.include_router(_module.router)
+# --- fastgen: end auto-mount ---
 
 
 @app.get("/health")

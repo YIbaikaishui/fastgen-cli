@@ -14,6 +14,7 @@ from pathlib import Path
 from ..layout import write_config
 from ..naming import to_snake, to_title
 from ..writers import GeneratedFile, write_file
+from .alembic import generate_alembic
 from .base import render_tree
 from .core import generate_core
 from .registry import registry_content
@@ -43,6 +44,7 @@ def generate_project(
 
     files = render_tree(PROJECT_TEMPLATE, context, project_root, force=force, dry_run=dry_run)
     files += generate_core(project_root, source="src", dry_run=dry_run)
+    files += generate_alembic(project_root, source="src", dry_run=dry_run)
 
     registry = project_root / "src" / "modules" / "__init__.py"
     if not registry.exists() or force:

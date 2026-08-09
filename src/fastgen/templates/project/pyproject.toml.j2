@@ -7,6 +7,7 @@ dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
     "sqlalchemy[asyncio]>=2.0",
+    "alembic>=1.13",
     "aiosqlite>=0.20",
     "pydantic-settings>=2.0",
 ]
@@ -21,7 +22,7 @@ dev = [
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["tests"]
+testpaths = ["tests", "{{ source }}/modules"]
 
 [tool.ruff]
 line-length = 100

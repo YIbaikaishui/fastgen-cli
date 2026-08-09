@@ -1,2 +1,35 @@
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from {{ source }}.modules.{{ snake }}.model import {{ pascal }}
+from {{ source }}.modules.{{ snake }}.schemas import {{ pascal }}Create, {{ pascal }}Update
+
+
+class {{ pascal }}Error(Exception):
+    """Base exception for the {{ kebab }} module. Raise subclasses from the service."""
+
+
+class {{ pascal }}NotFound({{ pascal }}Error):
+    """Raised when the requested {{ snake }} does not exist."""
+
+
 class {{ pascal }}Service:
-    """Business logic layer for {{ kebab }}."""
+    """Business logic layer for {{ kebab }}.
+
+    Keep this layer free of HTTP concerns; raise ``{{ pascal }}Error`` subclasses
+    and let the router map them to ``HTTPException``.
+    """
+
+    async def create(self, session: AsyncSession, data: {{ pascal }}Create) -> {{ pascal }}:
+        ...
+
+    async def list(self, session: AsyncSession) -> list[{{ pascal }}]:
+        ...
+
+    async def get(self, session: AsyncSession, item_id: int) -> {{ pascal }}:
+        ...
+
+    async def update(self, session: AsyncSession, item_id: int, data: {{ pascal }}Update) -> {{ pascal }}:
+        ...
+
+    async def delete(self, session: AsyncSession, item_id: int) -> None:
+        ...

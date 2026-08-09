@@ -1,5 +1,21 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
-class {{ pascal }}(BaseModel):
-    pass
+class {{ pascal }}Base(BaseModel):
+    """Shared {{ pascal }} fields. Add the attributes shared by create/update/read here."""
+
+
+class {{ pascal }}Create({{ pascal }}Base):
+    """Payload for creating a {{ snake }}."""
+
+
+class {{ pascal }}Update({{ pascal }}Base):
+    """Payload for updating a {{ snake }}."""
+
+
+class {{ pascal }}Read({{ pascal }}Base):
+    """Response schema. ``from_attributes`` lets FastAPI serialize ORM objects."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int

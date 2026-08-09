@@ -10,7 +10,9 @@ import typer
 from rich.table import Table
 
 from . import __version__
+from .generators.alembic import generate_alembic
 from .generators.core import generate_core
+from .generators.main import sync_main
 from .generators.module import generate_module
 from .generators.project import generate_project
 from .generators.registry import list_registered, register_module
@@ -23,6 +25,8 @@ app = typer.Typer(
 )
 make_app = typer.Typer(help="Scaffold modules and core infrastructure.", no_args_is_help=True)
 app.add_typer(make_app, name="make")
+init_app = typer.Typer(help="Add optional infrastructure to an existing project.", no_args_is_help=True)
+app.add_typer(init_app, name="init")
 
 
 @app.callback(invoke_without_command=True)
@@ -93,6 +97,7 @@ def make_module(
     files = generate_module(feature, directory, force=force, dry_run=dry_run)
     files += generate_core(directory, dry_run=dry_run)
     files.append(register_module(directory, feature, dry_run=dry_run))
+    files.append(sync_main(directory, dry_run=dry_run))
     report(files, dry_run=dry_run)
     skipped = [f for f in files if f.status == "skipped"]
     if skipped and not force:
@@ -100,6 +105,33 @@ def make_module(
             f"{len(skipped)} file(s) already exist. Re-run with --force to overwrite.",
             fg=typer.colors.YELLOW,
         )
+
+
+@init_app.command("alembic")
+def init_alembic(
+    directory: Path = typer.Option(Path.cwd(), "--dir", "-d", help="Target project root."),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Preview files without writing."),
+) -> None:
+    """Add Alembic migration scaffolding to an existing project.
+
+    Writes ``alembic.ini`` and ``migrations/`` (async env + an empty baseline
+    revision), wiring ``DATABASE_URL`` from the project's settings and
+    ``Base.metadata`` from the module registry. Existing files are never
+    overwritten.
+    """
+    files = generate_alembic(directory, dry_run=dry_run)
+    report(files, dry_run=dry_run)
+    typer.secho(
+        "Next steps:\n"
+        "  1. Add the dependency:  uv add alembic\n"
+        "  2. Apply the baseline:   uv run alembic upgrade head\n"
+        "  3. After model changes:  uv run alembic revision --autogenerate -m '<message>'"
+        " && uv run alembic upgrade head\n"
+        "  If the DB was already created without Alembic (create_all), adopt it with"
+        " `uv run alembic stamp head`,\n"
+        "  or delete the dev DB and re-create it via steps 2-3.",
+        fg=typer.colors.CYAN,
+    )
 
 
 @app.command("list")
