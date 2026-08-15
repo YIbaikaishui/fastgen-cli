@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="1200" height="380" viewBox="0 0 1200 380"
+     role="img" aria-labelledby="title desc">
+  <title id="title">How fastgen scaffolds and wires a module</title>
+  <desc id="desc">A single command scaffolds the module skeleton, registers it in the auto-maintained registry, auto-mounts its router into main.py, and verifies it with fastgen list.</desc>
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0B1118"/>
+      <stop offset="1" stop-color="#0A0E14"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="380" rx="26" fill="url(#bg)"/>
+
+  <g id="command-row" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <rect x="56" y="36" width="376" height="44" rx="22" fill="#111722" stroke="#1E2A38"/>
+    <text x="86" y="64" font-size="19"><tspan fill="#23C9A7" font-weight="700">$</tspan><tspan fill="#C7D0DA"> fastgen make module user</tspan></text>
+    <text x="474" y="64" font-size="18" fill="#8A97A3">one command → skeleton, registry, router, tests</text>
+  </g>
+
+  <g id="stages" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif">
+    <g>
+      <rect x="56" y="130" width="250" height="200" rx="14" fill="#111722" stroke="#1E2A38"/>
+      <text x="76" y="166" font-size="16" font-weight="700" fill="#23C9A7">1 · Skeleton</text>
+      <text x="76" y="198" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16" fill="#C7D0DA">src/modules/user/</text>
+      <text x="76" y="226" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16" fill="#8A97A3">model · schemas</text>
+      <text x="76" y="252" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16" fill="#8A97A3">service · router</text>
+      <text x="76" y="278" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16" fill="#8A97A3">tests/ · __init__</text>
+      <text x="76" y="310" font-size="14" fill="#5B6570">Minimal shape, never</text>
+      <text x="76" y="330" font-size="14" fill="#5B6570">overwritten afterwards</text>
+    </g>
+    <g>
+      <rect x="330" y="130" width="250" height="200" rx="14" fill="#111722" stroke="#1E2A38"/>
+      <text x="350" y="166" font-size="16" font-weight="700" fill="#23C9A7">2 · Register</text>
+      <text x="350" y="198" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16" fill="#8A97A3">modules/</text>
+      <text x="350" y="224" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16" fill="#8A97A3">__init__.py</text>
+      <text x="350" y="252" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16" fill="#E6B450">"user":</text>
+      <text x="350" y="278" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16" fill="#E6B450">"src.modules.user"</text>
+      <text x="350" y="310" font-size="14" fill="#5B6570">Auto-maintained registry;</text>
+      <text x="350" y="330" font-size="14" fill="#5B6570">don't hand-edit</text>
+    </g>
+    <g>
+      <rect x="604" y="130" width="250" height="200" rx="14" fill="#111722" stroke="#1E2A38"/>
+      <text x="624" y="166" font-size="16" font-weight="700" fill="#23C9A7">3 · Auto-mount</text>
+      <text x="624" y="198" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16" fill="#8A97A3">main.py</text>
+      <text x="624" y="224" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16" fill="#C7D0DA">for _path in modules:</text>
+      <text x="624" y="250" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16" fill="#C7D0DA">app.include_router(</text>
+      <text x="624" y="276" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16" fill="#C7D0DA">  _module.router)</text>
+      <text x="624" y="310" font-size="14" fill="#5B6570">Idempotent, guarded by a</text>
+      <text x="624" y="330" font-size="14" fill="#5B6570">fastgen: auto-mount marker</text>
+    </g>
+    <g>
+      <rect x="878" y="130" width="250" height="200" rx="14" fill="#111722" stroke="#1E2A38"/>
+      <text x="898" y="166" font-size="16" font-weight="700" fill="#23C9A7">4 · Verify</text>
+      <text x="898" y="198" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16" fill="#C7D0DA">$ fastgen list</text>
+      <text x="898" y="226" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" fill="#E6B450">user</text>
+      <text x="898" y="252" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" fill="#C7D0DA">src.modules.user</text>
+      <text x="898" y="278" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" fill="#8A97A3">User module.</text>
+      <text x="898" y="310" font-size="14" fill="#5B6570">Humans and AI agents read</text>
+      <text x="898" y="330" font-size="14" fill="#5B6570">the whole structure at once</text>
+    </g>
+  </g>
+
+  <g id="arrows" fill="#3A4653" stroke="#3A4653" stroke-width="2">
+    <line x1="312" y1="230" x2="322" y2="230"/><path d="M322 230 l-8 -5 v10 z" fill="#23C9A7" stroke="none"/>
+    <line x1="586" y1="230" x2="596" y2="230"/><path d="M596 230 l-8 -5 v10 z" fill="#23C9A7" stroke="none"/>
+    <line x1="860" y1="230" x2="870" y2="230"/><path d="M870 230 l-8 -5 v10 z" fill="#23C9A7" stroke="none"/>
+  </g>
+</svg>

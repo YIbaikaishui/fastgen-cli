@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="1200" height="420" viewBox="0 0 1200 420"
+     role="img" aria-labelledby="title desc">
+  <title id="title">fastgen-cli — a nest-cli style module manager for FastAPI</title>
+  <desc id="desc">Terminal session showing fastgen new demo-app scaffolding a project, fastgen make module user creating the module skeleton and registry entry, and fastgen list printing the registered module.</desc>
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0B1118"/>
+      <stop offset="1" stop-color="#0A0E14"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="420" rx="26" fill="url(#bg)"/>
+
+  <g id="title-block" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif">
+    <text x="56" y="86" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" letter-spacing="3" fill="#23C9A7">FASTAPI · CODE GENERATOR · CLI</text>
+
+    <text x="54" y="166" font-size="72" font-weight="800" fill="#F2F6FA">fastgen<tspan fill="#23C9A7">-cli</tspan></text>
+
+    <text x="56" y="214" font-size="22" fill="#C7D0DA">A nest-cli style module manager for FastAPI.</text>
+    <text x="56" y="244" font-size="22" fill="#C7D0DA">Scaffold modules, keep the structure tidy,</text>
+    <text x="56" y="274" font-size="22" fill="#C7D0DA">and let AI agents see it all at a glance.</text>
+
+    <text x="56" y="330" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" fill="#8A97A3">Python ≥ 3.11 <tspan fill="#3A4653">·</tspan> zero runtime dependency <tspan fill="#3A4653">·</tspan> MIT</text>
+  </g>
+
+  <g id="prompt-motif" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="19">
+    <text x="56" y="384"><tspan fill="#23C9A7" font-weight="700">$</tspan><tspan fill="#C7D0DA"> fastgen make module user</tspan></text>
+    <rect x="366" y="366" width="10" height="21" rx="2" fill="#23C9A7"/>
+  </g>
+
+  <g id="terminal" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <rect x="620" y="34" width="524" height="352" rx="14" fill="#111722" stroke="#1E2A38"/>
+
+    <circle cx="646" cy="58" r="5" fill="#FF5F57"/>
+    <circle cx="662" cy="58" r="5" fill="#FEBC2E"/>
+    <circle cx="678" cy="58" r="5" fill="#28C840"/>
+    <text x="882" y="63" text-anchor="middle" font-size="14" fill="#5B6570">fastgen — zsh</text>
+    <line x1="620" y1="72" x2="1144" y2="72" stroke="#1E2A38"/>
+
+    <g font-size="15" fill="#C7D0DA">
+      <text x="642" y="96"><tspan fill="#23C9A7" font-weight="700">$</tspan> fastgen new demo-app</text>
+      <text x="642" y="116"><tspan fill="#23C9A7">●</tspan><tspan fill="#8A97A3"> src/main.py</tspan></text>
+      <text x="642" y="136"><tspan fill="#23C9A7">●</tspan><tspan fill="#8A97A3"> src/core/database.py</tspan></text>
+      <text x="642" y="156"><tspan fill="#23C9A7">●</tspan><tspan fill="#8A97A3"> src/modules/__init__.py</tspan></text>
+      <text x="642" y="176"><tspan fill="#23C9A7">●</tspan><tspan fill="#8A97A3"> tests/ · migrations/ · alembic.ini</tspan></text>
+      <text x="642" y="196" fill="#8A97A3">Project created at ./demo-app</text>
+      <text x="642" y="224"><tspan fill="#23C9A7" font-weight="700">$</tspan> fastgen make module user</text>
+      <text x="642" y="244"><tspan fill="#23C9A7">●</tspan><tspan fill="#8A97A3"> src/modules/user/model.py</tspan></text>
+      <text x="642" y="264"><tspan fill="#23C9A7">●</tspan><tspan fill="#8A97A3"> src/modules/user/schemas.py</tspan></text>
+      <text x="642" y="284"><tspan fill="#23C9A7">●</tspan><tspan fill="#8A97A3"> src/modules/user/router.py</tspan></text>
+      <text x="642" y="304"><tspan fill="#23C9A7">●</tspan><tspan fill="#8A97A3"> registry: "user" → src.modules.user</tspan></text>
+      <text x="642" y="332"><tspan fill="#23C9A7" font-weight="700">$</tspan> fastgen list</text>
+      <text x="642" y="352"><tspan fill="#E6B450" font-weight="700">user</tspan><tspan fill="#8A97A3">  </tspan><tspan fill="#C7D0DA">src.modules.user</tspan><tspan fill="#8A97A3">  </tspan><tspan fill="#8A97A3">User module.</tspan></text>
+    </g>
+  </g>
+</svg>

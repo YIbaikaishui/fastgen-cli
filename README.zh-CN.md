@@ -11,7 +11,13 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![PyPI downloads](https://img.shields.io/pypi/dm/fastgen-cli)](https://pypi.org/project/fastgen-cli/)
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 </div>
+
+<p align="center">
+  <img src="./assets/readme/hero.svg" width="100%" alt="fastgen-cli：面向 FastAPI 的 nest-cli 风格模块管理器 —— 一键生成项目与模块骨架、保持结构整洁、自动维护模块注册表。">
+</p>
 
 ---
 
@@ -24,8 +30,8 @@ FastAPI 以"不强制结构"著称——自由是好事，但项目也容易失�
 - 🏗️ **一键脚手架整个项目**——`fastgen new my-app` 生成一个最佳实践的 `src/` 布局 FastAPI 项目（`.env`、`src/main.py`、`src/core/`、模块注册表、`tests/`、Alembic 迁移），开箱即跑
 - 🗂️ **一个模块 = 一个文件夹**（`<src>/modules/<feature>/`），每次都是统一的结构
 - 🧩 **最小骨架**——ORM 模型、schemas、业务层、路由 + 共享 session 依赖。刚好够"看懂"模块，绝不多生成代码挡住你
-- 📇 **自动维护注册表**——`app/modules/__init__.py` 记录每个模块；AI 和开发者读它即可瞬间了解项目
-- 🔌 **共享 DB 核心**只生成一次——`app/core/` 内含 pydantic-settings 配置 + 异步 SQLAlchemy `get_session`（最佳实践：`expire_on_commit=False`、`AsyncAttrs`）
+- 📇 **自动维护注册表**——`<src>/modules/__init__.py` 记录每个模块到其 import 路径的映射；AI 和开发者读它即可瞬间了解项目
+- 🔌 **共享 DB 核心**只生成一次——`<src>/core/` 内含 pydantic-settings 配置 + 异步 SQLAlchemy `get_session`（最佳实践：`expire_on_commit=False`、`AsyncAttrs`）
 - 🔁 **内置 Alembic 迁移**——`alembic upgrade head` 演进表结构，不用再删 `app.db`；autogenerate 自动识别模型变更
 - 🛡️ **绝不覆盖你的代码**——只生成缺失或为空的内容
 
@@ -57,7 +63,7 @@ fastgen make module user
 fastgen list
 ```
 
-就是这样。没有配置文件、没有 YAML、没有 spec——一条命令，拿到骨架。
+就是这样。没有配置文件、没有 YAML、没有 spec——一条命令，拿到骨架：
 
 ```
 $ fastgen list
@@ -65,9 +71,39 @@ $ fastgen list
 ┏━━━━━━━━┳━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┓
 ┃ module ┃ path             ┃ description    ┃
 ┡━━━━━━━━╇━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━┩
-│ user   │ app.modules.user │ User module.   │
+│ user   │ src.modules.user │ User module.   │
 └────────┴──────────────────┴────────────────┘
 ```
+
+---
+
+## 🔧 工作原理
+
+<p align="center">
+  <img src="./assets/readme/workflow.svg" width="100%" alt="四个步骤：fastgen make module user 生成模块骨架、写入注册表、在 main.py 中自动挂载路由，最后由 fastgen list 验证。">
+</p>
+
+每次执行 `fastgen make module <feature>` 都会按顺序做四件事：
+
+1. **生成骨架**——把模块骨架渲染进 `<src>/modules/<feature>/`（model / schemas / service / router / tests）。只写缺失或为空的文件，已有内容一律不动。
+2. **登记注册表**——把模块写进自动维护的注册表（`<src>/modules/__init__.py`），一个朴素的 `modules: dict[str, str]`，记录每个模块名到 import 路径的映射。
+3. **自动挂载**——幂等地同步 `<src>/main.py`，让它从注册表导入各模块并 `app.include_router(module.router)`，由 `# --- fastgen: auto-mount (do not remove) ---` 标记守护。新增模块无需手改 `main.py`。
+4. **验证**——`fastgen list` 把注册表打印成表格，你和 AI 助手一眼看清整个模块结构。
+
+> `fastgen new <name>` 是同一套机制用在整个项目上：它生成 `src/core/`、注册表、`tests/`、Alembic 迁移和 `.fastgen.json`，之后用 `make module` 逐步长出自己的业务。
+
+注册表刻意做得朴素——一个普通 dict，没有元数据、没有框架：
+
+```python
+# src/modules/__init__.py —— 由 fastgen 自动维护
+modules: dict[str, str] = {
+    "user": "src.modules.user",
+}
+
+__all__ = ["modules"]
+```
+
+因为 fastgen 生成的一切在运行时都不依赖 fastgen，所以随时可以卸载这个工具，留下的仍是一个完全普通的 FastAPI 项目。
 
 ---
 
@@ -108,7 +144,7 @@ my-app/
 ### `fastgen make module <feature>`
 
 ```
-app/  （由 `fastgen new` 生成的项目则为 src/）
+src/  （旧项目则为 app/；fastgen 自动识别布局）
 ├── core/                        # 首次使用时自动创建（绝不覆盖）
 │   ├── __init__.py
 │   ├── config.py                # pydantic-settings 配置，DATABASE_URL 读自 .env
@@ -134,17 +170,20 @@ app/  （由 `fastgen new` 生成的项目则为 src/）
 **`router.py`** 已经接好了共享 session 依赖，你只需添加端点：
 
 ```python
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Annotated
 
-from app.core.database import get_session
-from app.modules.user.schemas import User
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.core.database import get_session
+from src.modules.user.schemas import UserRead
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 router = APIRouter(prefix="/users", tags=["users"])
 
-@router.get("", response_model=list[User])
-async def list_users(session: SessionDep) -> list[User]:
+@router.get("", response_model=list[UserRead])
+async def list_users(session: SessionDep) -> list[UserRead]:
     ...
 ```
 
