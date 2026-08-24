@@ -39,8 +39,11 @@ def render_tree(
     files: list[GeneratedFile] = []
     for tmpl in sorted(src.rglob("*.j2")):
         rel_template = tmpl.relative_to(src)
-        rel = Path(env.from_string(str(rel_template)).render(**context))
-        rendered = env.get_template(str(rel_template)).render(**context)
+        # Jinja splits template paths on "/" and rejects backslashes, so use
+        # forward slashes on every platform (Windows Path would use "\\").
+        rel_name = rel_template.as_posix()
+        rel = Path(env.from_string(rel_name).render(**context))
+        rendered = env.get_template(rel_name).render(**context)
         target = dest_dir / rel.with_suffix("")
         files.append(write_file(target, rendered, force=force, dry_run=dry_run))
     return files

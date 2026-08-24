@@ -1,0 +1,30 @@
+"""SQLAlchemy adapter for the {{ pascal }} repository port."""
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from {{ source }}.modules.{{ snake }}.domain.model import {{ pascal }}
+
+
+class Sql{{ pascal }}Repository:
+    """Implements :class:`{{ source }}.modules.{{ snake }}.domain.repository.{{ pascal }}Repository`."""
+
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def add(self, entity: {{ pascal }}) -> {{ pascal }}:
+        self._session.add(entity)
+        await self._session.commit()
+        await self._session.refresh(entity)
+        return entity
+
+    async def get(self, entity_id: int) -> {{ pascal }} | None:
+        return await self._session.get({{ pascal }}, entity_id)
+
+    async def list(self) -> list[{{ pascal }}]:
+        result = await self._session.scalars(select({{ pascal }}))
+        return list(result)
+
+    async def delete(self, entity: {{ pascal }}) -> None:
+        await self._session.delete(entity)
+        await self._session.commit()

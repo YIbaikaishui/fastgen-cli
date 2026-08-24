@@ -80,10 +80,15 @@ def test_make_module_in_src_layout(proj: Path) -> None:
     register_module(proj, "user")
 
     module_dir = proj / "src" / "modules" / "user"
-    assert (module_dir / "schemas.py").exists()
-    assert (module_dir / "service.py").exists()
-    assert (module_dir / "router.py").exists()
-    assert "from src.core.database import get_session" in _read(module_dir / "router.py")
+    assert (module_dir / "application" / "schemas.py").exists()
+    assert (module_dir / "application" / "user_service.py").exists()
+    assert (module_dir / "api" / "router.py").exists()
+    assert (module_dir / "domain" / "model.py").exists()
+    assert (module_dir / "domain" / "repository.py").exists()
+    assert (module_dir / "infrastructure" / "user_repository.py").exists()
+    assert "from src.core.database import get_session" in _read(
+        module_dir / "api" / "router.py"
+    )
 
     assert read_registry(proj) == {"user": "src.modules.user"}
     names = [name for name, *_ in list_registered(proj)]
@@ -94,7 +99,7 @@ def test_make_module_in_app_layout_backwards_compatible(tmp_path: Path) -> None:
     generate_module("user", tmp_path)
     register_module(tmp_path, "user")
 
-    assert (tmp_path / "app" / "modules" / "user" / "router.py").exists()
+    assert (tmp_path / "app" / "modules" / "user" / "api" / "router.py").exists()
     assert read_registry(tmp_path) == {"user": "app.modules.user"}
     assert source_dir_name(tmp_path) == "app"
 

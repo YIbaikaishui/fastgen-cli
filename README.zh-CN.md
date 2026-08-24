@@ -149,15 +149,21 @@ src/  （旧项目则为 app/；fastgen 自动识别布局）
 │   ├── __init__.py
 │   ├── config.py                # pydantic-settings 配置，DATABASE_URL 读自 .env
 │   └── database.py              # Base（AsyncAttrs）、异步 engine、get_session
-└── modules/
-    ├── __init__.py              # 📇 模块注册表（自动维护）
-    └── user/
-        ├── __init__.py          # 对外暴露 router
-        ├── model.py             # SQLAlchemy 实体（id 主键，__tablename__ = 复数）
-        ├── schemas.py           # UserBase / UserCreate / UserUpdate / UserRead
-        │                        # UserRead 带 from_attributes=True，ORM 对象可直接序列化
-        ├── service.py           # 业务层：UserError 异常层级 + 异步 CRUD stub
-        ├── router.py            # APIRouter + SessionDep（已接好异步依赖注入）
+└── modules/                     # 📇 垂直切片：一个文件夹对应一个业务域
+    ├── __init__.py              # 模块注册表（自动维护）
+    └── user/                    # 每个模块内部再分层
+        ├── __init__.py          # 对外暴露 .api.router 的 router
+        ├── domain/              # 实体 + 仓库端口（无 I/O 或框架）
+        │   ├── model.py         # SQLAlchemy 实体（__tablename__ = 复数）
+        │   └── repository.py    # UserRepository Protocol（add/get/list/delete）
+        ├── application/         # 用例 + DTO（不涉及 HTTP）
+        │   ├── schemas.py       # UserBase / UserCreate / UserUpdate / UserRead
+        │   │                    # UserRead 带 from_attributes=True，ORM 对象可直接序列化
+        │   └── user_service.py  # UserService（构造注入仓库）+ UserError 异常层级
+        ├── infrastructure/      # 仓库端口的 SQLAlchemy 适配实现
+        │   └── user_repository.py
+        ├── api/                 # FastAPI 层：SessionDep + router，把异常映射为 HTTP
+        │   └── router.py        # APIRouter（prefix="/users"）
         └── tests/               # 内存 SQLite 测试库 + get_session 覆盖
             ├── conftest.py
             └── test_user.py
@@ -167,7 +173,8 @@ src/  （旧项目则为 app/；fastgen 自动识别布局）
 `importlib` 导入各模块并 `app.include_router(...)`——新增模块无需手改 `main.py`
 （由 `fastgen: auto-mount` 标记注释守护）。
 
-**`router.py`** 已经接好了共享 session 依赖，你只需添加端点：
+`fastgen make module` 会生成上面整套垂直切片骨架，每层都已接好共享 session 依赖，
+你只需添加端点和业务逻辑。生成的 `router.py` 形如：
 
 ```python
 from typing import Annotated
@@ -176,14 +183,21 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_session
-from src.modules.user.schemas import UserRead
+from src.modules.user.application.user_service import UserNotFound, UserService
+from src.modules.user.domain.model import User
+from src.modules.user.infrastructure.user_repository import SqlUserRepository
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 router = APIRouter(prefix="/users", tags=["users"])
 
-@router.get("", response_model=list[UserRead])
-async def list_users(session: SessionDep) -> list[UserRead]:
+
+def _service(session: AsyncSession) -> UserService:
+    return UserService.from_repository(SqlUserRepository(session))
+
+
+@router.get("", response_model=list[User])
+async def list_users(session: SessionDep) -> list[User]:
     ...
 ```
 
@@ -261,7 +275,7 @@ uv run alembic downgrade -1               # 回滚一步
 | 命令 | 说明 |
 | --- | --- |
 | `fastgen new <name>` | 脚手架一个新的最佳实践 `src/` 布局 FastAPI 项目（core + 注册表 + tests + Alembic） |
-| `fastgen make module <feature>` | 生成模块骨架（model / schemas / service / router / tests）、自动挂载路由并登记注册表 |
+| `fastgen make module <feature>` | 生成垂直切片模块骨架（domain / application / infrastructure / api / tests）、自动挂载路由并登记注册表 |
 | `fastgen init alembic` | 给已有项目添加 Alembic 迁移脚手架（幂等） |
 | `fastgen list` | 列出已注册模块、import 路径和用途 |
 | `fastgen --version` / `-V` | 显示版本号 |
@@ -281,8 +295,8 @@ uv run alembic downgrade -1               # 回滚一步
 ## 📐 固定约定
 
 - **布局**——`fastgen new` 生成 `src/` 布局并记录到 `.fastgen.json`。fastgen 依次按 `.fastgen.json`、自动探测、最后回退到 `app/`（兼容旧项目）的顺序解析布局。
-- **模块**位于 `<src>/modules/<feature>/`——一个文件夹对应一个业务单元，内含 `model.py`、`schemas.py`（`XBase`/`XCreate`/`XUpdate`/`XRead`，`XRead` 带 `from_attributes`）、`service.py`、`router.py`、`tests/`。
-- **路由**暴露 `prefix="/<复数形式>"`（REST 风格），复用 `<src>.core.database` 里的 `SessionDep`，并从注册表**自动挂载**进 `main.py`（由 `fastgen: auto-mount` 标记守护——别删）。
+- **模块**位于 `<src>/modules/<feature>/`——一个文件夹对应一个业务单元，按**垂直切片**生成：`domain/`（`model.py` + `repository.py` 端口）、`application/`（`schemas.py` 的 `XBase`/`XCreate`/`XUpdate`/`XRead`，`XRead` 带 `from_attributes`，加 `<feature>_service.py`）、`infrastructure/`（`Sql*Repository`）、`api/`（`router.py`）、`tests/`。
+- **路由**暴露 `prefix="/<复数形式>"`（REST 风格），复用 `<src>.core.database` 里的 `SessionDep`，从注册表**自动挂载**进 `main.py`（由 `fastgen: auto-mount` 标记守护——别删），并把领域异常映射为 `HTTPException`。
 - **注册表**——`<src>/modules/__init__.py` 保存"模块名 → import 路径"映射，由 fastgen 自动保持同步，请勿手改。
 - **核心**——`<src>/core/config.py` 和 `database.py` 只在**缺失或为空**时生成。已有代码即使加 `--force` 也绝不触碰。
 - **表结构**——由 Alembic 迁移管理（启动时不再 `create_all`）。

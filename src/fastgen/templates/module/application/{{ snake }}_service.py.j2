@@ -1,0 +1,47 @@
+"""{{ pascal }} application service (use cases)."""
+
+from {{ source }}.modules.{{ snake }}.application.schemas import (
+    {{ pascal }}Create,
+    {{ pascal }}Update,
+)
+from {{ source }}.modules.{{ snake }}.domain.model import {{ pascal }}
+from {{ source }}.modules.{{ snake }}.domain.repository import {{ pascal }}Repository
+
+
+class {{ pascal }}Error(Exception):
+    """Base exception for the {{ kebab }} domain. Raise subclasses from the service."""
+
+
+class {{ pascal }}NotFound({{ pascal }}Error):
+    """Raised when the requested {{ snake }} does not exist."""
+
+
+class {{ pascal }}Service:
+    """Application service for {{ kebab }} use cases. Free of HTTP concerns."""
+
+    def __init__(self, repository: {{ pascal }}Repository) -> None:
+        self._entities = repository
+
+    @classmethod
+    def from_repository(cls, repository: {{ pascal }}Repository) -> "{{ pascal }}Service":
+        return cls(repository)
+
+    async def create(self, data: {{ pascal }}Create) -> {{ pascal }}:
+        return await self._entities.add({{ pascal }}())
+
+    async def list(self) -> list[{{ pascal }}]:
+        return await self._entities.list()
+
+    async def get(self, item_id: int) -> {{ pascal }}:
+        entity = await self._entities.get(item_id)
+        if entity is None:
+            raise {{ pascal }}NotFound()
+        return entity
+
+    async def update(self, item_id: int, data: {{ pascal }}Update) -> {{ pascal }}:
+        entity = await self.get(item_id)
+        return await self._entities.add(entity)
+
+    async def delete(self, item_id: int) -> None:
+        entity = await self.get(item_id)
+        await self._entities.delete(entity)

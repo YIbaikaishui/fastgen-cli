@@ -149,15 +149,21 @@ src/  (or app/ for a legacy project; fastgen auto-detects the layout)
 │   ├── __init__.py
 │   ├── config.py                # pydantic-settings Settings, DATABASE_URL from .env
 │   └── database.py              # Base (AsyncAttrs), async engine, get_session
-└── modules/
-    ├── __init__.py              # 📇 module registry (auto-maintained)
-    └── user/
-        ├── __init__.py          # re-exports the router
-        ├── model.py             # SQLAlchemy entity on Base (id PK, __tablename__ = plural)
-        ├── schemas.py           # UserBase / UserCreate / UserUpdate / UserRead
-        │                        # UserRead has from_attributes=True so ORM objects serialize
-        ├── service.py           # business layer: UserError hierarchy + async CRUD stubs
-        ├── router.py            # APIRouter + SessionDep (async DI wired)
+└── modules/                     # 📇 vertical slices: one folder per business domain
+    ├── __init__.py              # module registry (auto-maintained)
+    └── user/                    # each module is internally layered
+        ├── __init__.py          # re-exports the router from .api.router
+        ├── domain/              # entities + repository port (no I/O or framework)
+        │   ├── model.py         # SQLAlchemy entity on Base (__tablename__ = plural)
+        │   └── repository.py    # UserRepository Protocol (add/get/list/delete)
+        ├── application/         # use cases + DTOs (free of HTTP)
+        │   ├── schemas.py       # UserBase / UserCreate / UserUpdate / UserRead
+        │   │                    # UserRead has from_attributes=True so ORM objects serialize
+        │   └── user_service.py  # UserService (constructor-injected repo) + UserError hierarchy
+        ├── infrastructure/      # SQLAlchemy adapter for the repository port
+        │   └── user_repository.py
+        ├── api/                 # FastAPI layer: SessionDep + router, maps exceptions to HTTP
+        │   └── router.py        # APIRouter (prefix="/users")
         └── tests/               # in-memory SQLite test DB + get_session override
             ├── conftest.py
             └── test_user.py
@@ -167,7 +173,9 @@ Routers are **auto-mounted**: `fastgen make module` idempotently syncs `main.py`
 to import registered modules from the registry and `app.include_router(...)` each —
 no hand-editing `main.py` when adding a module (guarded by a `fastgen: auto-mount` marker).
 
-**`router.py`** already wires the shared session dependency, so you just add endpoints:
+`fastgen make module` scaffolds the full vertical-slice skeleton above; every layer
+already wires the shared session dependency, so you just add endpoints and business
+logic. The generated `router.py` looks like:
 
 ```python
 from typing import Annotated
@@ -176,14 +184,21 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_session
-from src.modules.user.schemas import UserRead
+from src.modules.user.application.user_service import UserNotFound, UserService
+from src.modules.user.domain.model import User
+from src.modules.user.infrastructure.user_repository import SqlUserRepository
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 router = APIRouter(prefix="/users", tags=["users"])
 
-@router.get("", response_model=list[UserRead])
-async def list_users(session: SessionDep) -> list[UserRead]:
+
+def _service(session: AsyncSession) -> UserService:
+    return UserService.from_repository(SqlUserRepository(session))
+
+
+@router.get("", response_model=list[User])
+async def list_users(session: SessionDep) -> list[User]:
     ...
 ```
 
@@ -283,8 +298,8 @@ The others generate **more for you**: FastKit's full CRUD router, Gondola's mail
 ## 📐 Conventions (fixed)
 
 - **Layout** — `fastgen new` creates a `src/` layout and records it in `.fastgen.json`. `fastgen` resolves `src` from `.fastgen.json`, then by auto-detection, and finally falls back to `app/` for existing projects.
-- **Modules** live in `<src>/modules/<feature>/` — one business unit per folder, holding `model.py`, `schemas.py` (`XBase`/`XCreate`/`XUpdate`/`XRead`, with `from_attributes` on `XRead`), `service.py`, `router.py`, and `tests/`.
-- **Router** exposes `prefix="/<plural>"` (REST-style), reuses `SessionDep` from `<src>.core.database`, and is **auto-mounted** into `main.py` from the registry (guarded by a `fastgen: auto-mount` marker — don't remove it).
+- **Modules** live in `<src>/modules/<feature>/` — one business unit per folder, scaffolded as a **vertical slice**: `domain/` (`model.py` + `repository.py` port), `application/` (`schemas.py` `XBase`/`XCreate`/`XUpdate`/`XRead` with `from_attributes` on `XRead`, plus `<feature>_service.py`), `infrastructure/` (`Sql*Repository`), `api/` (`router.py`), and `tests/`.
+- **Router** exposes `prefix="/<plural>"` (REST-style), reuses `SessionDep` from `<src>.core.database`, is **auto-mounted** into `main.py` from the registry (guarded by a `fastgen: auto-mount` marker — don't remove it), and maps domain exceptions to `HTTPException`.
 - **Registry** — `<src>/modules/__init__.py` maps module name → import path. Always kept in sync by fastgen; don't hand-edit.
 - **Core** — `<src>/core/config.py` and `database.py` are generated only when **missing or empty**. Existing code is never touched, even with `--force`.
 - **Schema** — managed by Alembic migrations (not `create_all` at startup).

@@ -1,0 +1,63 @@
+"""{{ pascal }} HTTP router."""
+
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from {{ source }}.core.database import get_session
+from {{ source }}.modules.{{ snake }}.application.{{ snake }}_service import (
+    {{ pascal }}NotFound,
+    {{ pascal }}Service,
+)
+from {{ source }}.modules.{{ snake }}.application.schemas import (
+    {{ pascal }}Create,
+    {{ pascal }}Read,
+    {{ pascal }}Update,
+)
+from {{ source }}.modules.{{ snake }}.domain.model import {{ pascal }}
+from {{ source }}.modules.{{ snake }}.infrastructure.{{ snake }}_repository import Sql{{ pascal }}Repository
+
+SessionDep = Annotated[AsyncSession, Depends(get_session)]
+
+router = APIRouter(prefix="/{{ plural }}", tags=["{{ plural }}"])
+
+
+def _service(session: AsyncSession) -> {{ pascal }}Service:
+    return {{ pascal }}Service.from_repository(Sql{{ pascal }}Repository(session))
+
+
+@router.post("", response_model={{ pascal }}Read, status_code=status.HTTP_201_CREATED)
+async def create_{{ snake }}(data: {{ pascal }}Create, session: SessionDep) -> {{ pascal }}:
+    return await _service(session).create(data)
+
+
+@router.get("", response_model=list[{{ pascal }}Read])
+async def list_{{ plural }}(session: SessionDep) -> list[{{ pascal }}]:
+    return await _service(session).list()
+
+
+@router.get("/{{ '{' }}{{ snake }}_id{{ '}' }}", response_model={{ pascal }}Read)
+async def get_{{ snake }}({{ snake }}_id: int, session: SessionDep) -> {{ pascal }}:
+    try:
+        return await _service(session).get({{ snake }}_id)
+    except {{ pascal }}NotFound:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="{{ pascal }} not found")
+
+
+@router.patch("/{{ '{' }}{{ snake }}_id{{ '}' }}", response_model={{ pascal }}Read)
+async def update_{{ snake }}(
+    {{ snake }}_id: int, data: {{ pascal }}Update, session: SessionDep
+) -> {{ pascal }}:
+    try:
+        return await _service(session).update({{ snake }}_id, data)
+    except {{ pascal }}NotFound:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="{{ pascal }} not found")
+
+
+@router.delete("/{{ '{' }}{{ snake }}_id{{ '}' }}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_{{ snake }}({{ snake }}_id: int, session: SessionDep) -> None:
+    try:
+        await _service(session).delete({{ snake }}_id)
+    except {{ pascal }}NotFound:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="{{ pascal }} not found")

@@ -3,7 +3,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from {{ source }}.modules import modules
-from {{ source }}.modules.{{ snake }}.router import router
+from {{ source }}.modules.{{ snake }}.api.router import router
 
 
 def test_module_registered() -> None:

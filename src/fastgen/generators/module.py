@@ -1,8 +1,10 @@
-"""Feature-module generator: schemas.py + service.py + router.py + __init__.py.
+"""Feature-module generator: vertical-slice module skeleton.
 
-The skeleton only sketches the module's shape (entity, business layer, API
-boundary, shared session dependency) so AI agents can reason about it; real
-business code is filled in by the developer.
+Each scaffolded module is layered under ``modules/<feature>/``:
+``domain/`` (model + repository port), ``application/`` (schemas + service),
+``infrastructure/`` (SQLAlchemy repository), ``api/`` (router), plus ``tests/``.
+The skeleton only sketches the module's shape so AI agents can reason about it;
+real business code is filled in by the developer.
 """
 
 from __future__ import annotations

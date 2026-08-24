@@ -34,7 +34,7 @@ def test_new_then_make_module(tmp_path: Path) -> None:
     result = runner.invoke(app, ["make", "module", "user", "--dir", str(tmp_path / "demo")])
     assert result.exit_code == 0, result.output
     module_dir = tmp_path / "demo" / "src" / "modules" / "user"
-    assert (module_dir / "router.py").exists()
+    assert (module_dir / "api" / "router.py").exists()
 
     listed = runner.invoke(app, ["list", "--dir", str(tmp_path / "demo")])
     assert listed.exit_code == 0

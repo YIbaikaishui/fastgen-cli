@@ -21,7 +21,19 @@ def test_module_generates_full_skeleton(tmp_path: Path) -> None:
     result = runner.invoke(app, ["make", "module", "post", "--dir", str(root)])
     assert result.exit_code == 0, result.output
     module_dir = root / "src" / "modules" / "post"
-    for name in ("model.py", "schemas.py", "service.py", "router.py", "__init__.py"):
+    for name in (
+        "__init__.py",
+        "domain/__init__.py",
+        "domain/model.py",
+        "domain/repository.py",
+        "application/__init__.py",
+        "application/schemas.py",
+        "application/post_service.py",
+        "infrastructure/__init__.py",
+        "infrastructure/post_repository.py",
+        "api/__init__.py",
+        "api/router.py",
+    ):
         assert (module_dir / name).exists(), name
     assert (module_dir / "tests" / "conftest.py").exists()
     assert (module_dir / "tests" / "test_post.py").exists()
@@ -30,7 +42,9 @@ def test_module_generates_full_skeleton(tmp_path: Path) -> None:
 def test_module_schemas_follow_orm_read_convention(tmp_path: Path) -> None:
     root = _scaffold(tmp_path)
     runner.invoke(app, ["make", "module", "post", "--dir", str(root)])
-    schemas = (root / "src" / "modules" / "post" / "schemas.py").read_text(encoding="utf-8")
+    schemas = (root / "src" / "modules" / "post" / "application" / "schemas.py").read_text(
+        encoding="utf-8"
+    )
     assert "from_attributes=True" in schemas
     assert "class PostCreate" in schemas
     assert "class PostRead" in schemas
@@ -40,7 +54,9 @@ def test_module_schemas_follow_orm_read_convention(tmp_path: Path) -> None:
 def test_module_model_generates_entity(tmp_path: Path) -> None:
     root = _scaffold(tmp_path)
     runner.invoke(app, ["make", "module", "post", "--dir", str(root)])
-    model = (root / "src" / "modules" / "post" / "model.py").read_text(encoding="utf-8")
+    model = (root / "src" / "modules" / "post" / "domain" / "model.py").read_text(
+        encoding="utf-8"
+    )
     assert "class Post(Base)" in model
     assert '__tablename__ = "posts"' in model
     assert "mapped_column(primary_key=True)" in model
@@ -61,9 +77,30 @@ def test_module_tests_include_test_db_fixture(tmp_path: Path) -> None:
 def test_module_service_defines_error_hierarchy(tmp_path: Path) -> None:
     root = _scaffold(tmp_path)
     runner.invoke(app, ["make", "module", "post", "--dir", str(root)])
-    service = (root / "src" / "modules" / "post" / "service.py").read_text(encoding="utf-8")
+    service = (root / "src" / "modules" / "post" / "application" / "post_service.py").read_text(
+        encoding="utf-8"
+    )
     assert "class PostError(Exception)" in service
     assert "class PostNotFound" in service
+
+
+def test_module_router_maps_not_found_to_404(tmp_path: Path) -> None:
+    root = _scaffold(tmp_path)
+    runner.invoke(app, ["make", "module", "post", "--dir", str(root)])
+    router = (root / "src" / "modules" / "post" / "api" / "router.py").read_text(
+        encoding="utf-8"
+    )
+    assert 'router = APIRouter(prefix="/posts"' in router
+    assert "raise HTTPException(status_code=status.HTTP_404_NOT_FOUND" in router
+    assert "from src.modules.post.application.post_service import" in router
+
+
+def test_module_exports_router_from_api_layer(tmp_path: Path) -> None:
+    root = _scaffold(tmp_path)
+    runner.invoke(app, ["make", "module", "post", "--dir", str(root)])
+    init = (root / "src" / "modules" / "post" / "__init__.py").read_text(encoding="utf-8")
+    assert "from .api.router import router" in init
+    assert '__all__ = ["router"]' in init
 
 
 def test_make_module_mounts_router_in_main(tmp_path: Path) -> None:

@@ -1,0 +1,17 @@
+"""{{ pascal }} repository port interface."""
+
+from typing import Protocol
+
+from {{ source }}.modules.{{ snake }}.domain.model import {{ pascal }}
+
+
+class {{ pascal }}Repository(Protocol):
+    """Persistence contract for ``{{ pascal }}`` entities."""
+
+    async def add(self, entity: {{ pascal }}) -> {{ pascal }}: ...
+
+    async def get(self, entity_id: int) -> {{ pascal }} | None: ...
+
+    async def list(self) -> list[{{ pascal }}]: ...
+
+    async def delete(self, entity: {{ pascal }}) -> None: ...
