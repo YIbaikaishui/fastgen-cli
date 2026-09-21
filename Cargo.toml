@@ -1,0 +1,38 @@
+[package]
+name = "fastgen-cli"
+version = "0.7.0"
+edition = "2021"
+rust-version = "1.82"
+description = "FastAPI feature-based module manager (nest-cli style for FastAPI), written in Rust"
+license = "MIT"
+keywords = ["fastapi", "code-generator", "scaffold", "cli", "nest-cli"]
+categories = ["command-line-utilities", "development-tools"]
+repository = "https://github.com/YIbaikaishui/fastgen-cli"
+readme = "README.md"
+include = ["/src", "/LICENSE", "/README.md", "/README.zh-CN.md"]
+
+[dependencies]
+anstream = "0.6"
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+comfy-table = "7"
+minijinja = { version = "2", features = ["json"] }
+owo-colors = "4"
+serde_json = "1"
+
+[dev-dependencies]
+tempfile = "3"
+
+[[bin]]
+name = "fastgen"
+path = "src/main.rs"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = "deny"
+pedantic = "warn"
+
+[profile.release]
+strip = true

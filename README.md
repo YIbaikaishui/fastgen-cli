@@ -6,8 +6,9 @@
 
 Zero-config. One command. Fill in the business logic yourself.
 
-[![PyPI version](https://img.shields.io/pypi/v/fastgen-cli.svg)](https://pypi.org/project/fastgen-cli/)
-[![Python](https://img.shields.io/pypi/pyversions/fastgen-cli.svg)](https://pypi.org/project/fastgen-cli/)
+[![crates.io](https://img.shields.io/crates/v/fastgen-cli.svg)](https://crates.io/crates/fastgen-cli)
+[![crates.io downloads](https://img.shields.io/crates/d/fastgen-cli.svg)](https://crates.io/crates/fastgen-cli)
+[![Rust](https://img.shields.io/badge/written%20in-Rust-dea584.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![PyPI downloads](https://img.shields.io/pypi/dm/fastgen-cli)](https://pypi.org/project/fastgen-cli/)
 
@@ -29,6 +30,7 @@ FastAPI is famously unopinionated — which is great for freedom, but bad for *s
 
 - 🏗️ **Scaffold whole projects** — `fastgen new my-app` creates a best-practice `src/`-layout FastAPI project (`.env`, `src/main.py`, `src/core/`, module registry, `tests/`, Alembic migrations) ready to run
 - 🗂️ **One module = one folder** (`<src>/modules/<feature>/`), with a consistent shape every time
+- ⚡ **Rust binary** — one self-contained executable, starts instantly, no Python runtime needed to run the tool
 - 🧩 **Minimal skeleton** — ORM model, schemas, service boundary, router + shared session dependency. Just enough to *see* the module, never enough to get in the way
 - 📇 **Auto-maintained registry** — `<src>/modules/__init__.py` maps every module to its import path; AI agents and devs read it to understand the project instantly
 - 🔌 **Shared DB core** generated once — `<src>/core/` with pydantic-settings config + async SQLAlchemy `get_session` (best-practice, `expire_on_commit=False`, `AsyncAttrs`)
@@ -40,12 +42,15 @@ FastAPI is famously unopinionated — which is great for freedom, but bad for *s
 ## 📦 Installation
 
 ```bash
-pip install fastgen-cli
-# or
-uv add fastgen-cli
+# From crates.io (any platform with a Rust toolchain)
+cargo install fastgen-cli
+
+# Or download a prebuilt binary from GitHub Releases:
+# https://github.com/YIbaikaishui/fastgen-cli/releases/latest
 ```
 
-> Requires **Python 3.11+**.
+`fastgen` is a single self-contained binary — running it needs no Python runtime
+at all. The projects it scaffolds are ordinary **Python 3.11+** FastAPI apps.
 
 ---
 
@@ -230,7 +235,7 @@ uv run alembic downgrade -1               # roll back one step
 
 | Tool | What it is | Runtime dependency you must keep | Generated module |
 | --- | --- | --- | --- |
-| **fastgen-cli** | Generator only — plain FastAPI | None | Model / schemas / service / router + tests + auto-maintained registry; Alembic migrations |
+| **fastgen-cli** | Generator only — plain FastAPI (Rust CLI) | None | Model / schemas / service / router + tests + auto-maintained registry; Alembic migrations |
 | **PyNest** | Framework on FastAPI (NestJS-style) | `pynest-api` (`nest.core`) | Module with `@Module` / `@Controller` / `@Injectable`, DI container |
 | **FastKit** | Meta-framework + CLI (Laravel-style) | `fastkit-core` | Full CRUD module (model / schema / repository / service / router) |
 | **Gondola** | CLI with Rails-like conventions | `gondola-cli` + default PostgreSQL stack | Models / routers / services / mailers / tests, Alembic migrations |
@@ -321,11 +326,11 @@ The others generate **more for you**: FastKit's full CRUD router, Gondola's mail
 ```bash
 git clone https://github.com/YIbaikaishui/fastgen-cli.git
 cd fastgen-cli
-uv sync
-uv run fastgen --help
+cargo build --release
+cargo test
 ```
 
-Lint with `uv run ruff check src`.
+Lint / format: `cargo clippy --all-targets` and `cargo fmt --check`.
 
 ---
 

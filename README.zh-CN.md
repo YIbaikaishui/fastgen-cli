@@ -6,8 +6,9 @@
 
 零配置。一条命令。业务逻辑交给你。
 
-[![PyPI version](https://img.shields.io/pypi/v/fastgen-cli.svg)](https://pypi.org/project/fastgen-cli/)
-[![Python](https://img.shields.io/pypi/pyversions/fastgen-cli.svg)](https://pypi.org/project/fastgen-cli/)
+[![crates.io](https://img.shields.io/crates/v/fastgen-cli.svg)](https://crates.io/crates/fastgen-cli)
+[![crates.io downloads](https://img.shields.io/crates/d/fastgen-cli.svg)](https://crates.io/crates/fastgen-cli)
+[![Rust](https://img.shields.io/badge/written%20in-Rust-dea584.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![PyPI downloads](https://img.shields.io/pypi/dm/fastgen-cli)](https://pypi.org/project/fastgen-cli/)
 
@@ -29,6 +30,7 @@ FastAPI 以"不强制结构"著称——自由是好事，但项目也容易失�
 
 - 🏗️ **一键脚手架整个项目**——`fastgen new my-app` 生成一个最佳实践的 `src/` 布局 FastAPI 项目（`.env`、`src/main.py`、`src/core/`、模块注册表、`tests/`、Alembic 迁移），开箱即跑
 - 🗂️ **一个模块 = 一个文件夹**（`<src>/modules/<feature>/`），每次都是统一的结构
+- ⚡ **Rust 二进制**——单一自包含可执行文件，瞬间启动，运行工具本身无需 Python 运行时
 - 🧩 **最小骨架**——ORM 模型、schemas、业务层、路由 + 共享 session 依赖。刚好够"看懂"模块，绝不多生成代码挡住你
 - 📇 **自动维护注册表**——`<src>/modules/__init__.py` 记录每个模块到其 import 路径的映射；AI 和开发者读它即可瞬间了解项目
 - 🔌 **共享 DB 核心**只生成一次——`<src>/core/` 内含 pydantic-settings 配置 + 异步 SQLAlchemy `get_session`（最佳实践：`expire_on_commit=False`、`AsyncAttrs`）
@@ -40,12 +42,15 @@ FastAPI 以"不强制结构"著称——自由是好事，但项目也容易失�
 ## 📦 安装
 
 ```bash
-pip install fastgen-cli
-# 或
-uv add fastgen-cli
+# 从 crates.io 安装（任意有 Rust 工具链的平台）
+cargo install fastgen-cli
+
+# 或从 GitHub Releases 下载预编译二进制：
+# https://github.com/YIbaikaishui/fastgen-cli/releases/latest
 ```
 
-> 需要 **Python 3.11+**。
+`fastgen` 是一个自包含的单一可执行文件——运行它完全不需要 Python 运行时。
+它脚手架出来的项目则是普通的 **Python 3.11+** FastAPI 应用。
 
 ---
 
@@ -227,7 +232,7 @@ uv run alembic downgrade -1               # 回滚一步
 
 | 工具 | 是什么 | 你必须保留的运行时依赖 | 生成的模块 |
 | --- | --- | --- | --- |
-| **fastgen-cli** | 纯生成器——裸 FastAPI | 无 | 模型 / schemas / service / router / tests + 自动维护的注册表；Alembic 迁移 |
+| **fastgen-cli** | 纯生成器——裸 FastAPI（Rust CLI） | 无 | 模型 / schemas / service / router / tests + 自动维护的注册表；Alembic 迁移 |
 | **PyNest** | 构建在 FastAPI 上的框架（NestJS 风格） | `pynest-api`（`nest.core`） | 带 `@Module` / `@Controller` / `@Injectable` 与 DI 容器的模块 |
 | **FastKit** | 元框架 + CLI（Laravel 风格） | `fastkit-core` | 完整 CRUD 模块（model / schema / repository / service / router） |
 | **Gondola** | 强调约定的 CLI（Rails 风格） | `gondola-cli` + 默认 PostgreSQL 技术栈 | models / routers / services / mailers / tests，Alembic 迁移 |
@@ -318,11 +323,11 @@ uv run alembic downgrade -1               # 回滚一步
 ```bash
 git clone https://github.com/YIbaikaishui/fastgen-cli.git
 cd fastgen-cli
-uv sync
-uv run fastgen --help
+cargo build --release
+cargo test
 ```
 
-代码检查：`uv run ruff check src`。
+代码检查 / 格式化：`cargo clippy --all-targets` 和 `cargo fmt --check`。
 
 ---
 

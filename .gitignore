@@ -1,3 +1,6 @@
+# Rust build artifacts
+/target
+
 # Build artifacts
 dist/
 build/
