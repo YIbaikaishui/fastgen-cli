@@ -6,8 +6,8 @@
 
 零配置。一条命令。业务逻辑交给你。
 
-[![crates.io](https://img.shields.io/crates/v/fastgen-cli.svg)](https://crates.io/crates/fastgen-cli)
-[![crates.io downloads](https://img.shields.io/crates/d/fastgen-cli.svg)](https://crates.io/crates/fastgen-cli)
+[![PyPI version](https://img.shields.io/pypi/v/fastgen-cli.svg)](https://pypi.org/project/fastgen-cli/)
+[![PyPI downloads](https://img.shields.io/pypi/dm/fastgen-cli)](https://pypi.org/project/fastgen-cli/)
 [![Rust](https://img.shields.io/badge/written%20in-Rust-dea584.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![PyPI downloads](https://img.shields.io/pypi/dm/fastgen-cli)](https://pypi.org/project/fastgen-cli/)
@@ -42,14 +42,23 @@ FastAPI 以"不强制结构"著称——自由是好事，但项目也容易失�
 ## 📦 安装
 
 ```bash
-# 从 crates.io 安装（任意有 Rust 工具链的平台）
-cargo install fastgen-cli
+pip install fastgen-cli
+# 或
+uv add fastgen-cli
+```
 
+`fastgen` 是一个自包含的 Rust 二进制，直接打进 wheel（uv 同款模式）——工具本身
+不依赖 Python 运行时，安装后 `fastgen` 命令直接上 `PATH`。wheel 覆盖 Linux
+（x86_64 / aarch64，glibc 2.17+）、macOS（Intel / Apple Silicon）和 Windows。
+
+其他安装方式：
+
+```bash
+cargo install fastgen-cli    # 从 crates.io 安装（需要 Rust 工具链）
 # 或从 GitHub Releases 下载预编译二进制：
 # https://github.com/YIbaikaishui/fastgen-cli/releases/latest
 ```
 
-`fastgen` 是一个自包含的单一可执行文件——运行它完全不需要 Python 运行时。
 它脚手架出来的项目则是普通的 **Python 3.11+** FastAPI 应用。
 
 ---
@@ -328,6 +337,14 @@ cargo test
 ```
 
 代码检查 / 格式化：`cargo clippy --all-targets` 和 `cargo fmt --check`。
+
+发布 wheel 到 PyPI（uv 模式——用 `maturin` + `ziglang` 出低 glibc 兼容的 wheel）：
+
+```bash
+maturin build --release --zig --target <target>   # 每个平台一次
+maturin sdist
+maturin publish
+```
 
 ---
 

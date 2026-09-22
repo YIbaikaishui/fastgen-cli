@@ -6,8 +6,8 @@
 
 Zero-config. One command. Fill in the business logic yourself.
 
-[![crates.io](https://img.shields.io/crates/v/fastgen-cli.svg)](https://crates.io/crates/fastgen-cli)
-[![crates.io downloads](https://img.shields.io/crates/d/fastgen-cli.svg)](https://crates.io/crates/fastgen-cli)
+[![PyPI version](https://img.shields.io/pypi/v/fastgen-cli.svg)](https://pypi.org/project/fastgen-cli/)
+[![PyPI downloads](https://img.shields.io/pypi/dm/fastgen-cli)](https://pypi.org/project/fastgen-cli/)
 [![Rust](https://img.shields.io/badge/written%20in-Rust-dea584.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![PyPI downloads](https://img.shields.io/pypi/dm/fastgen-cli)](https://pypi.org/project/fastgen-cli/)
@@ -42,15 +42,25 @@ FastAPI is famously unopinionated — which is great for freedom, but bad for *s
 ## 📦 Installation
 
 ```bash
-# From crates.io (any platform with a Rust toolchain)
-cargo install fastgen-cli
+pip install fastgen-cli
+# or
+uv add fastgen-cli
+```
 
-# Or download a prebuilt binary from GitHub Releases:
+`fastgen` is a single self-contained Rust binary shipped inside the wheel (the
+uv model) — the tool itself needs no Python runtime, and it lands on your
+`PATH` as `fastgen`. Wheels are published for Linux (x86_64 / aarch64,
+glibc 2.17+), macOS (Intel / Apple Silicon) and Windows.
+
+Alternative installs:
+
+```bash
+cargo install fastgen-cli    # from crates.io (needs a Rust toolchain)
+# or download a prebuilt binary from GitHub Releases:
 # https://github.com/YIbaikaishui/fastgen-cli/releases/latest
 ```
 
-`fastgen` is a single self-contained binary — running it needs no Python runtime
-at all. The projects it scaffolds are ordinary **Python 3.11+** FastAPI apps.
+The projects it scaffolds are ordinary **Python 3.11+** FastAPI apps.
 
 ---
 
@@ -331,6 +341,15 @@ cargo test
 ```
 
 Lint / format: `cargo clippy --all-targets` and `cargo fmt --check`.
+
+Publish wheels to PyPI (uv model — `maturin` + `ziglang` for portable,
+low-glibc wheels):
+
+```bash
+maturin build --release --zig --target <target>   # one per platform
+maturin sdist
+maturin publish
+```
 
 ---
 
