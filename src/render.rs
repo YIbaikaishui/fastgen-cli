@@ -31,6 +31,32 @@ pub fn render_template(dir: &str, name: &str, ctx: &Value) -> anyhow::Result<Str
         .with_context(|| format!("failed to render template {dir}/{name}"))
 }
 
+/// Render every template path in `dir` (sorted), without rendering contents.
+///
+/// Used by the prompt builder to describe the scaffolded file tree.
+///
+/// # Errors
+///
+/// Returns an error when a template path fails to render.
+pub fn rendered_rel_paths(dir: &str, ctx: &Value) -> anyhow::Result<Vec<String>> {
+    let env = environment();
+    let mut entries: Vec<_> = templates_in(dir);
+    entries.sort_by(|a, b| a.rel.cmp(b.rel));
+    let mut out = Vec::with_capacity(entries.len());
+    for entry in entries {
+        let rel_name = env
+            .render_str(entry.rel, ctx)
+            .with_context(|| format!("failed to render template path {}", entry.rel))?;
+        out.push(
+            rel_name
+                .strip_suffix(".j2")
+                .unwrap_or(rel_name.as_str())
+                .to_string(),
+        );
+    }
+    Ok(out)
+}
+
 /// Render every template in `dir` into `dest_dir` (sorted by path, like the Python version).
 ///
 /// # Errors

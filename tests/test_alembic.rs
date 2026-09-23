@@ -2,16 +2,20 @@
 
 use std::path::Path;
 
-use fastgen_cli::cli::run_with;
+use fastgen_cli::agent::AgentSelection;
+use fastgen_cli::cli::run_with_mode;
 
 fn scaffold(tmp: &tempfile::TempDir) -> std::path::PathBuf {
-    run_with([
-        "fastgen",
-        "new",
-        "demo",
-        "--dir",
-        tmp.path().to_str().unwrap(),
-    ])
+    run_with_mode(
+        [
+            "fastgen",
+            "new",
+            "demo",
+            "--dir",
+            tmp.path().to_str().unwrap(),
+        ],
+        AgentSelection::Skip,
+    )
     .unwrap();
     tmp.path().join("demo")
 }
@@ -71,13 +75,16 @@ fn test_init_alembic_adds_to_legacy_app_layout() {
         "from fastapi import FastAPI\n\napp = FastAPI()\n",
     )
     .unwrap();
-    run_with([
-        "fastgen",
-        "init",
-        "alembic",
-        "--dir",
-        root.to_str().unwrap(),
-    ])
+    run_with_mode(
+        [
+            "fastgen",
+            "init",
+            "alembic",
+            "--dir",
+            root.to_str().unwrap(),
+        ],
+        AgentSelection::Skip,
+    )
     .unwrap();
     assert!(root.join("alembic.ini").exists());
     assert!(root.join("migrations").join("env.py").exists());
@@ -90,22 +97,28 @@ fn test_init_alembic_adds_to_legacy_app_layout() {
 fn test_init_alembic_is_idempotent() {
     let tmp = tempfile::tempdir().unwrap();
     let root = scaffold(&tmp);
-    run_with([
-        "fastgen",
-        "init",
-        "alembic",
-        "--dir",
-        root.to_str().unwrap(),
-    ])
+    run_with_mode(
+        [
+            "fastgen",
+            "init",
+            "alembic",
+            "--dir",
+            root.to_str().unwrap(),
+        ],
+        AgentSelection::Skip,
+    )
     .unwrap();
     let alembic_ini = read(&root.join("alembic.ini"));
-    run_with([
-        "fastgen",
-        "init",
-        "alembic",
-        "--dir",
-        root.to_str().unwrap(),
-    ])
+    run_with_mode(
+        [
+            "fastgen",
+            "init",
+            "alembic",
+            "--dir",
+            root.to_str().unwrap(),
+        ],
+        AgentSelection::Skip,
+    )
     .unwrap();
     assert_eq!(read(&root.join("alembic.ini")), alembic_ini);
 }

@@ -31,6 +31,7 @@ FastAPI 以"不强制结构"著称——自由是好事，但项目也容易失�
 - 🏗️ **一键脚手架整个项目**——`fastgen new my-app` 生成一个最佳实践的 `src/` 布局 FastAPI 项目（`.env`、`src/main.py`、`src/core/`、模块注册表、`tests/`、Alembic 迁移），开箱即跑
 - 🗂️ **一个模块 = 一个文件夹**（`<src>/modules/<feature>/`），每次都是统一的结构
 - ⚡ **Rust 二进制**——单一自包含可执行文件，瞬间启动，运行工具本身无需 Python 运行时
+- 🤖 **AI 原生**——fastgen 管结构，`codex`/`opencode` 在结构里写代码
 - 🧩 **最小骨架**——ORM 模型、schemas、业务层、路由 + 共享 session 依赖。刚好够"看懂"模块，绝不多生成代码挡住你
 - 📇 **自动维护注册表**——`<src>/modules/__init__.py` 记录每个模块到其 import 路径的映射；AI 和开发者读它即可瞬间了解项目
 - 🔌 **共享 DB 核心**只生成一次——`<src>/core/` 内含 pydantic-settings 配置 + 异步 SQLAlchemy `get_session`（最佳实践：`expire_on_commit=False`、`AsyncAttrs`）
@@ -120,6 +121,28 @@ __all__ = ["modules"]
 因为 fastgen 生成的一切在运行时都不依赖 fastgen，所以随时可以卸载这个工具，留下的仍是一个完全普通的 FastAPI 项目。
 
 ---
+
+## 🤖 AI 智能体（codex / opencode）
+
+fastgen 是**结构优先**的：脚手架是确定性的，代码由 AI 智能体在结构内部编写。
+生成命令总是调用智能体——这是产品本身，不是可选外挂。
+
+```bash
+npm install -g @openai/codex   # 或：curl -fsSL https://opencode.ai/install | bash
+
+fastgen new myapp --ai "任务管理 API，带项目和任务"
+fastgen make module order --ai "明细行、状态枚举、金额汇总"
+fastgen make module invoice            # 不给规格：智能体实现合理的 CRUD
+```
+
+工作流程：
+
+1. fastgen 渲染确定性骨架（毫秒级、字节级稳定）
+2. 智能体（优先 `codex`，备选 `opencode`；`--agent` 可强制指定）按编码了 fastgen 约定的 prompt 填充代码
+3. fastgen **验证并校正**：报告智能体改动的文件、自动登记它创建的模块、重新同步自动挂载块、并对结果跑 `python -m py_compile`
+
+用 `--agent codex|opencode` 指定智能体，或用 `FASTGEN_AGENT_CMD` 指向任何其他
+CLI 智能体（如 `FASTGEN_AGENT_CMD="claude -p"`）；`--dry-run` 只预览骨架，不启动智能体。
 
 ## 🧱 生成的内容
 
@@ -301,7 +324,9 @@ uv run alembic downgrade -1               # 回滚一步
 | `--dir <path>` / `-d` | `new`、`make module`、`init alembic`、`list` | 目标项目根目录（默认当前目录） |
 | `--title <name>` | `new` | 人类可读的应用标题（默认取项目名） |
 | `--description <text>` | `new` | 简短的项目描述 |
-| `--dry-run` | `new`、`make module`、`init alembic` | 预览将要生成的文件，不写入任何内容 |
+| `--ai <规格>` | `new`、`make module` | 交给填充骨架的 AI 智能体的自然语言描述 |
+| `--agent <名称>` | 所有命令 | 强制使用 `codex` 或 `opencode`（默认自动探测） |
+| `--dry-run` | `new`、`make module`、`init alembic` | 预览将要生成的文件，不写入任何内容（不启动智能体） |
 | `--force` / `-f` | `new`、`make module` | 覆盖已存在的文件 |
 
 ---
@@ -323,6 +348,7 @@ uv run alembic downgrade -1               # 回滚一步
 - [x] `make module` —— model / schemas / service / router / tests + 自动挂载
 - [x] 模块注册表 + `fastgen list`
 - [x] Alembic 迁移（`init alembic`、autogenerate、upgrade）
+- [x] AI 智能体集成 —— `codex`/`opencode` 填充骨架（`--ai`），fastgen 验证并校正
 - [ ] `make resource` —— 完整 CRUD 路由生成
 
 ---
