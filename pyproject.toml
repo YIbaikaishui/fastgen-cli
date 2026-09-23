@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "fastgen-cli"
-version = "0.8.0" # keep in sync with Cargo.toml
+version = "1.0.0" # keep in sync with Cargo.toml
 description = "FastAPI feature-based module manager (nest-cli style for FastAPI), written in Rust"
 readme = "README.md"
 requires-python = ">=3.9"
