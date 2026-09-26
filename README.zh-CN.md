@@ -42,10 +42,16 @@ FastAPI 以"不强制结构"著称——自由是好事，但项目也容易失�
 
 ## 📦 安装
 
+**通常你不需要安装任何东西。** `uvx` 按需运行：
+
 ```bash
-pip install fastgen-cli
-# 或
-uv add fastgen-cli
+uvx fastgen-cli make module order
+```
+
+天天用再装：
+
+```bash
+uv tool install fastgen-cli     # 或：pip install fastgen-cli / uv add fastgen-cli
 ```
 
 `fastgen` 是一个自包含的 Rust 二进制，直接打进 wheel（uv 同款模式）——工具本身
@@ -66,16 +72,33 @@ cargo install fastgen-cli    # 从 crates.io 安装（需要 Rust 工具链）
 
 ## 🚀 快速开始
 
+**最快——从模板开始**（什么都不用装，clone 即用）：
+[fastapi-fastgen-starter](https://github.com/YIbaikaishui/fastapi-fastgen-starter)
+——一个带完整示例模块、可直接运行的 FastAPI 项目。在 GitHub 点
+**Use this template**，或：
+
 ```bash
-# 脚手架整个项目（src/ 布局：.env、src/main.py、src/core/、tests/、Alembic）
-fastgen new my-app
+git clone https://github.com/YIbaikaishui/fastapi-fastgen-starter my-app
 cd my-app && uv sync && uv run alembic upgrade head && uv run uvicorn src.main:app --reload
+```
 
-# 生成 user 模块（创建 src/modules/user/ + src/core/ + 注册表 + 测试）
-fastgen make module user
+**或者从零 Scaffold，零安装**（`uvx` 直接运行，不落盘）：
 
-# 查看所有已注册模块及其边界
-fastgen list
+```bash
+uvx fastgen-cli new my-app
+cd my-app && uv sync && uv run alembic upgrade head && uv run uvicorn src.main:app --reload
+```
+
+**随时加模块**——一条命令，`main.py` 永远不用手改：
+
+```bash
+uvx fastgen-cli make module order
+```
+
+**随时看全貌**——给你，也给 AI 智能体：
+
+```bash
+uvx fastgen-cli list
 ```
 
 就是这样。没有配置文件、没有 YAML、没有 spec——一条命令，拿到骨架：
@@ -122,17 +145,16 @@ __all__ = ["modules"]
 
 ---
 
-## 🤖 AI 智能体（codex / opencode）
+## 🤖 可选：AI 智能体（codex / opencode）
 
-fastgen 是**结构优先**的：脚手架是确定性的，代码由 AI 智能体在结构内部编写。
-生成命令总是调用智能体——这是产品本身，不是可选外挂。
+默认情况下 fastgen 是纯粹的确定性脚手架——不需要智能体、不需要 API key，
+除了 `uv` 什么都不用装。想让智能体把骨架填成真实代码，用 `--ai`  opt in：
 
 ```bash
 npm install -g @openai/codex   # 或：curl -fsSL https://opencode.ai/install | bash
 
 fastgen new myapp --ai "任务管理 API，带项目和任务"
 fastgen make module order --ai "明细行、状态枚举、金额汇总"
-fastgen make module invoice            # 不给规格：智能体实现合理的 CRUD
 ```
 
 工作流程：
