@@ -61,8 +61,8 @@ enum Commands {
         /// Short project description.
         #[arg(long, default_value = "")]
         description: String,
-        /// Natural-language spec handed to the AI agent (codex/opencode) that
-        /// completes the project. Without it the agent just verifies the scaffold.
+        /// Optional: hand a natural-language spec to an AI agent (codex/opencode)
+        /// that fills the scaffold with real code. Omit for the bare template.
         #[arg(long)]
         ai: Option<String>,
         /// Preview files without writing (skips the agent).
@@ -106,8 +106,8 @@ enum MakeCommands {
         /// Target project root.
         #[arg(long, short = 'd', default_value = ".")]
         dir: PathBuf,
-        /// Natural-language spec handed to the AI agent (codex/opencode) that
-        /// fills in the module. Without it the agent implements a sensible CRUD.
+        /// Optional: hand a natural-language spec to an AI agent (codex/opencode)
+        /// that fills the module with real code. Omit for the skeleton only.
         #[arg(long)]
         ai: Option<String>,
         /// Preview files without writing (skips the agent).
@@ -289,8 +289,11 @@ fn cmd_new(
         );
         return Ok(());
     }
-    let prompt = prompt::build_project_prompt(name, "src", &target, ai)?;
-    run_agent_flow(selection, &prompt, &target, &target.join("src"))?;
+    // The agent is opt-in: `fastgen new` alone is a pure deterministic scaffold.
+    if let Some(spec) = ai {
+        let prompt = prompt::build_project_prompt(name, "src", &target, Some(spec))?;
+        run_agent_flow(selection, &prompt, &target, &target.join("src"))?;
+    }
     anstream::println!(
         "{}",
         format!(
@@ -328,17 +331,12 @@ fn cmd_make(command: &MakeCommands, selection: &AgentSelection) -> anyhow::Resul
     if *dry_run {
         return Ok(());
     }
-    let scaffolded = files.iter().any(|f| f.status == Status::Created);
-    if !scaffolded && !force {
-        anstream::println!(
-            "{}",
-            "Module already exists \u{2014} the agent was skipped. Re-run with --force to rewrite it."
-                .yellow()
-        );
+    // The agent is opt-in: `fastgen make module` alone is a pure deterministic scaffold.
+    let Some(spec) = ai else {
         return Ok(());
-    }
+    };
     let source = source_dir_name(&dir);
-    let prompt = prompt::build_module_prompt(feature, &source, &dir, ai.as_deref())?;
+    let prompt = prompt::build_module_prompt(feature, &source, &dir, Some(spec))?;
     let module_root = dir.join(&source).join("modules").join(to_snake(feature));
     run_agent_flow(selection, &prompt, &dir, &module_root)
 }

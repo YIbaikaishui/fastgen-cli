@@ -2,36 +2,29 @@
 
 use std::path::Path;
 
-use fastgen_cli::agent::AgentSelection;
-use fastgen_cli::cli::run_with_mode;
+use fastgen_cli::cli::run_with;
 
 fn scaffold(tmp: &tempfile::TempDir) -> std::path::PathBuf {
-    run_with_mode(
-        [
-            "fastgen",
-            "new",
-            "demo",
-            "--dir",
-            tmp.path().to_str().unwrap(),
-        ],
-        AgentSelection::Skip,
-    )
+    run_with([
+        "fastgen",
+        "new",
+        "demo",
+        "--dir",
+        tmp.path().to_str().unwrap(),
+    ])
     .unwrap();
     tmp.path().join("demo")
 }
 
 fn make_module(root: &Path, feature: &str) {
-    run_with_mode(
-        [
-            "fastgen",
-            "make",
-            "module",
-            feature,
-            "--dir",
-            root.to_str().unwrap(),
-        ],
-        AgentSelection::Skip,
-    )
+    run_with([
+        "fastgen",
+        "make",
+        "module",
+        feature,
+        "--dir",
+        root.to_str().unwrap(),
+    ])
     .unwrap();
 }
 

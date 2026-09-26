@@ -1,7 +1,6 @@
 //! End-to-end CLI tests.
 
-use fastgen_cli::agent::AgentSelection;
-use fastgen_cli::cli::run_with_mode;
+use fastgen_cli::cli::run_with;
 use fastgen_cli::generators::registry::list_registered;
 
 fn path_str(path: &std::path::Path) -> &str {
@@ -11,11 +10,7 @@ fn path_str(path: &std::path::Path) -> &str {
 #[test]
 fn test_new_command() {
     let tmp = tempfile::tempdir().unwrap();
-    run_with_mode(
-        ["fastgen", "new", "demo", "--dir", path_str(tmp.path())],
-        AgentSelection::Skip,
-    )
-    .unwrap();
+    run_with(["fastgen", "new", "demo", "--dir", path_str(tmp.path())]).unwrap();
     let root = tmp.path().join("demo");
     assert!(root.join(".env").exists());
     assert!(root.join("src").join("main.py").exists());
@@ -30,34 +25,23 @@ fn test_new_refuses_non_empty_dir() {
     let target = tmp.path().join("demo");
     std::fs::create_dir(&target).unwrap();
     std::fs::write(target.join("keep.txt"), "x").unwrap();
-    let err = run_with_mode(
-        ["fastgen", "new", "demo", "--dir", path_str(tmp.path())],
-        AgentSelection::Skip,
-    )
-    .unwrap_err();
+    let err = run_with(["fastgen", "new", "demo", "--dir", path_str(tmp.path())]).unwrap_err();
     assert!(err.to_string().contains("already exists"));
 }
 
 #[test]
 fn test_new_then_make_module() {
     let tmp = tempfile::tempdir().unwrap();
-    run_with_mode(
-        ["fastgen", "new", "demo", "--dir", path_str(tmp.path())],
-        AgentSelection::Skip,
-    )
-    .unwrap();
+    run_with(["fastgen", "new", "demo", "--dir", path_str(tmp.path())]).unwrap();
     let root = tmp.path().join("demo");
-    run_with_mode(
-        [
-            "fastgen",
-            "make",
-            "module",
-            "user",
-            "--dir",
-            path_str(&root),
-        ],
-        AgentSelection::Skip,
-    )
+    run_with([
+        "fastgen",
+        "make",
+        "module",
+        "user",
+        "--dir",
+        path_str(&root),
+    ])
     .unwrap();
     assert!(root
         .join("src")
