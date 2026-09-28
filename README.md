@@ -301,6 +301,28 @@ uv run alembic downgrade -1               # roll back one step
 
 ---
 
+## 🩺 doctor — keep the structure honest
+
+As a project grows, the registry drifts: someone deletes a module folder but
+not its entry (which crashes `main.py` at boot), or adds one by hand and never
+registers it (its router silently never mounts). `doctor` makes the drift
+visible — and repairs what it can:
+
+```bash
+fastgen doctor            # report; exit code 1 when the app is broken
+fastgen doctor --fix      # register orphans, drop stale entries, re-inject the mount block
+fastgen doctor --strict   # warnings fail too
+fastgen doctor --json     # for scripts and CI
+```
+
+Gate your CI on it:
+
+```yaml
+- run: uvx fastgen-cli doctor --strict
+```
+
+---
+
 ## ⚖️ How does it compare?
 
 ### vs. other FastAPI module generators & frameworks
@@ -358,6 +380,7 @@ The others generate **more for you**: FastKit's full CRUD router, Gondola's mail
 | `fastgen make module <feature>` | Scaffold a feature module (model / schemas / service / router / tests), auto-mount its router, register it |
 | `fastgen init alembic` | Add Alembic migration scaffolding to an existing project (idempotent) |
 | `fastgen list` | List registered modules, import paths, and purposes |
+| `fastgen doctor [--fix] [--strict] [--json]` | Check structure drift (stale registry entries, unmounted modules, missing auto-mount, syntax errors); exit code 1 on errors — CI-gateable |
 | `fastgen --version` / `-V` | Show version |
 
 ### Options

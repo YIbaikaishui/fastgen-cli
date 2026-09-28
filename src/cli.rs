@@ -98,6 +98,24 @@ enum Commands {
         #[arg(long, short = 'd', default_value = ".")]
         dir: PathBuf,
     },
+    /// Check a project for structure drift (stale registry entries, unmounted
+    /// modules, broken auto-mount, syntax errors). Exit code 1 on errors —
+    /// CI-gateable.
+    Doctor {
+        /// Target project root.
+        #[arg(long, short = 'd', default_value = ".")]
+        dir: PathBuf,
+        /// Repair what is fixable: register orphans, drop stale entries,
+        /// re-inject the auto-mount block.
+        #[arg(long)]
+        fix: bool,
+        /// Also exit 1 on warnings.
+        #[arg(long)]
+        strict: bool,
+        /// Machine-readable output.
+        #[arg(long)]
+        json: bool,
+    },
 }
 
 #[derive(Subcommand)]
@@ -252,6 +270,12 @@ fn execute(command: Commands, selection: &AgentSelection) -> anyhow::Result<()> 
             force,
         ),
         Commands::Make { ref command } => cmd_make(command, selection),
+        Commands::Doctor {
+            ref dir,
+            fix,
+            strict,
+            json,
+        } => cmd_doctor(dir, fix, strict, json),
         Commands::Init { ref command } => cmd_init(command),
         Commands::List { ref dir } => {
             cmd_list(dir);
@@ -391,6 +415,66 @@ fn cmd_init(command: &InitCommands) -> anyhow::Result<()> {
     let files = alembic::generate_alembic(&dir, None, *dry_run)?;
     report(&files, *dry_run);
     anstream::println!("{}", NEXT_STEPS.cyan());
+    Ok(())
+}
+
+fn cmd_doctor(dir: &Path, fix: bool, strict: bool, json: bool) -> anyhow::Result<()> {
+    use crate::doctor::{check_project, fix_project, Issue};
+
+    if fix {
+        let actions = fix_project(dir, None)?;
+        if json {
+            anstream::println!(
+                "{}",
+                serde_json::to_string_pretty(&serde_json::json!(actions))?
+            );
+        } else if actions.is_empty() {
+            anstream::println!("{}", "nothing to fix".green());
+        } else {
+            for action in &actions {
+                anstream::println!("{}", format!("[fixed] {action}").green());
+            }
+        }
+    }
+
+    let issues = check_project(dir, None)?;
+    let errors = issues
+        .iter()
+        .filter(|i| i.severity == crate::doctor::Severity::Error)
+        .count();
+    let warnings = issues.len() - errors;
+
+    if json {
+        let payload = serde_json::json!({
+            "errors": errors,
+            "warnings": warnings,
+            "issues": issues.iter().map(Issue::to_json).collect::<Vec<_>>(),
+        });
+        anstream::println!("{}", serde_json::to_string_pretty(&payload)?);
+    } else if issues.is_empty() {
+        anstream::println!("{}", "\u{2713} project structure is clean".green());
+    } else {
+        for issue in &issues {
+            let label = match issue.severity {
+                crate::doctor::Severity::Error => "error".red().to_string(),
+                crate::doctor::Severity::Warning => "warning".yellow().to_string(),
+            };
+            let hint = if issue.fixable {
+                " (fixable: --fix)"
+            } else {
+                ""
+            };
+            anstream::println!("{} {} {}{}", label, issue.code, issue.message, hint);
+        }
+        anstream::println!(
+            "{}",
+            format!("{errors} error(s), {warnings} warning(s)").bold()
+        );
+    }
+
+    if errors > 0 || (strict && warnings > 0) {
+        std::process::exit(1);
+    }
     Ok(())
 }
 

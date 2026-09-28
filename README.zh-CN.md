@@ -294,6 +294,26 @@ uv run alembic downgrade -1               # 回滚一步
 
 ---
 
+## 🩺 doctor——让结构保持诚实
+
+项目越长，注册表越容易漂移：有人删了模块目录却没删注册项（`main.py` 启动即崩），
+有人手建了模块却没登记（路由永远不挂载）。`doctor` 让漂移可见，并且能修：
+
+```bash
+fastgen doctor            # 报告；应用已损坏时退出码 1
+fastgen doctor --fix      # 登记遗漏模块、清除失效项、重新注入挂载块
+fastgen doctor --strict   # 警告也算失败
+fastgen doctor --json     # 给脚本和 CI
+```
+
+在 CI 里卡住：
+
+```yaml
+- run: uvx fastgen-cli doctor --strict
+```
+
+---
+
 ## ⚖️ 它和别的方案比怎么样？
 
 ### 与其他 FastAPI 模块生成器 / 框架对比
@@ -351,6 +371,7 @@ uv run alembic downgrade -1               # 回滚一步
 | `fastgen make module <feature>` | 生成垂直切片模块骨架（domain / application / infrastructure / api / tests）、自动挂载路由并登记注册表 |
 | `fastgen init alembic` | 给已有项目添加 Alembic 迁移脚手架（幂等） |
 | `fastgen list` | 列出已注册模块、import 路径和用途 |
+| `fastgen doctor [--fix] [--strict] [--json]` | 检查结构漂移（失效注册项、未登记模块、缺失自动挂载、语法错误）；有错误时退出码 1——可用于 CI 卡点 |
 | `fastgen --version` / `-V` | 显示版本号 |
 
 ### 选项
