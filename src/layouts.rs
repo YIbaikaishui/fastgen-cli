@@ -32,6 +32,12 @@ pub const REMOTE_LAYOUTS: &[Layout] = &[
         recommended: true,
     },
     Layout {
+        name: "auth",
+        repo: "https://github.com/YIbaikaishui/fastgen-layout-auth",
+        description: "JWT auth: register, login, protected routes, password hashing",
+        recommended: false,
+    },
+    Layout {
         name: "basic",
         repo: "https://github.com/YIbaikaishui/fastgen-layout-basic",
         description: "minimal project, empty registry",
@@ -162,13 +168,24 @@ mod tests {
     #[test]
     fn resolve_known_aliases() {
         assert_eq!(resolve_layout("local"), LayoutSource::Local);
+        for layout in REMOTE_LAYOUTS {
+            assert_eq!(
+                resolve_layout(layout.name),
+                LayoutSource::Clone(layout.repo.to_string())
+            );
+        }
         assert_eq!(
-            resolve_layout("advanced"),
-            LayoutSource::Clone("https://github.com/YIbaikaishui/fastgen-layout-advanced".into())
+            resolve_layout("auth"),
+            LayoutSource::Clone("https://github.com/YIbaikaishui/fastgen-layout-auth".into())
         );
-        assert_eq!(
-            resolve_layout("basic"),
-            LayoutSource::Clone("https://github.com/YIbaikaishui/fastgen-layout-basic".into())
+    }
+
+    #[test]
+    fn exactly_one_recommended_layout() {
+        assert_eq!(REMOTE_LAYOUTS.iter().filter(|l| l.recommended).count(), 1);
+        assert!(
+            REMOTE_LAYOUTS[0].recommended,
+            "the first entry is the default"
         );
     }
 

@@ -80,6 +80,7 @@ uvx fastgen-cli new my-app
 ```
 
 - **advanced**——带完整 CRUD 示例模块，推荐
+- **auth**——JWT 鉴权开箱即用：注册、登录、受保护路由、bcrypt
 - **basic**——最小项目，注册表为空
 - **local**——内置脚手架：瞬时、离线、不需要 git
 
@@ -93,6 +94,7 @@ cd my-app && uv sync && uv run alembic upgrade head && uv run uvicorn src.main:a
 **直接在 GitHub 上浏览 layout**（它们就是普通仓库——clone 或点
 *Use this template*）：
 [advanced](https://github.com/YIbaikaishui/fastgen-layout-advanced) ·
+[auth](https://github.com/YIbaikaishui/fastgen-layout-auth) ·
 [basic](https://github.com/YIbaikaishui/fastgen-layout-basic)
 
 **用自己的 layout**——指向任何 git 仓库（fork、公司规范、镜像）：

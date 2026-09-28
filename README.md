@@ -81,6 +81,7 @@ uvx fastgen-cli new my-app
 ```
 
 - **advanced** — worked CRUD example (note module), recommended
+- **auth** — JWT auth wired: register, login, protected routes, bcrypt
 - **basic** — minimal project, empty registry
 - **local** — the built-in scaffold: instant, offline, no git needed
 
@@ -94,6 +95,7 @@ cd my-app && uv sync && uv run alembic upgrade head && uv run uvicorn src.main:a
 **Browse the layouts on GitHub directly** (they are just repos — clone or
 click *Use this template*):
 [advanced](https://github.com/YIbaikaishui/fastgen-layout-advanced) ·
+[auth](https://github.com/YIbaikaishui/fastgen-layout-auth) ·
 [basic](https://github.com/YIbaikaishui/fastgen-layout-basic)
 
 **Use your own layout** — point at any git repo (fork, company standard,
