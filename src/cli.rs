@@ -13,6 +13,7 @@ use crate::generators::{
     registry as registry_gen,
 };
 use crate::layout::source_dir_name;
+use crate::layouts::{self, LayoutSource};
 use crate::naming::to_snake;
 use crate::prompt;
 use crate::reconcile;
@@ -65,6 +66,13 @@ enum Commands {
         /// that fills the scaffold with real code. Omit for the bare template.
         #[arg(long)]
         ai: Option<String>,
+        /// Project layout: `advanced`, `basic`, `local`, or a git URL/path.
+        /// Prompts interactively when omitted in a terminal.
+        #[arg(long)]
+        layout: Option<String>,
+        /// Shorthand for `--layout <url>`: clone any layout repository.
+        #[arg(long, short = 'r')]
+        repo: Option<String>,
         /// Preview files without writing (skips the agent).
         #[arg(long)]
         dry_run: bool,
@@ -227,6 +235,8 @@ fn execute(command: Commands, selection: &AgentSelection) -> anyhow::Result<()> 
             title,
             description,
             ai,
+            layout,
+            repo,
             dry_run,
             force,
         } => cmd_new(
@@ -235,6 +245,8 @@ fn execute(command: Commands, selection: &AgentSelection) -> anyhow::Result<()> 
             title.as_deref(),
             &description,
             ai.as_deref(),
+            layout.as_deref(),
+            repo.as_deref(),
             selection,
             dry_run,
             force,
@@ -255,6 +267,8 @@ fn cmd_new(
     title: Option<&str>,
     description: &str,
     ai: Option<&str>,
+    layout: Option<&str>,
+    repo: Option<&str>,
     selection: &AgentSelection,
     dry_run: bool,
     force: bool,
@@ -265,14 +279,44 @@ fn cmd_new(
     } else {
         dir.join(name)
     };
-    if target.exists() && fs::read_dir(&target)?.next().is_some() && !force {
-        anyhow::bail!(
-            "Directory {} already exists and is not empty. Use --force to overwrite.",
-            target.display()
-        );
-    }
-    let files =
-        project_gen::generate_project(name, &target, title, description, "0.1.0", force, dry_run)?;
+    // Layout: -r wins, then --layout, then an interactive picker (TTY only),
+    // then the built-in local scaffold (keeps CI and scripts offline).
+    let source = if let Some(repo) = repo {
+        LayoutSource::Clone(repo.to_string())
+    } else if let Some(spec) = layout {
+        layouts::resolve_layout(spec)
+    } else if !dry_run && std::io::IsTerminal::is_terminal(&std::io::stdin()) {
+        layouts::prompt_layout()?
+    } else {
+        LayoutSource::Local
+    };
+
+    let files = match source {
+        LayoutSource::Local => {
+            if target.exists() && fs::read_dir(&target)?.next().is_some() && !force {
+                anyhow::bail!(
+                    "Directory {} already exists and is not empty. Use --force to overwrite.",
+                    target.display()
+                );
+            }
+            project_gen::generate_project(
+                name,
+                &target,
+                title,
+                description,
+                "0.1.0",
+                force,
+                dry_run,
+            )?
+        }
+        LayoutSource::Clone(repo) => {
+            anstream::println!(
+                "{}",
+                format!("Cloning layout from {repo} (needs git + network)...").bold()
+            );
+            layouts::clone_layout(&repo, &target, name)?
+        }
+    };
     report(&files, dry_run);
     anstream::println!(
         "{}",

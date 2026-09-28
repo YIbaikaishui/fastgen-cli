@@ -73,22 +73,34 @@ The projects it scaffolds are ordinary **Python 3.11+** FastAPI apps.
 
 ## 🚀 Quick start
 
-**Fastest — start from the template** (nothing to install, just clone):
-[fastapi-fastgen-starter](https://github.com/YIbaikaishui/fastapi-fastgen-starter)
-— a working FastAPI project with a filled-in example module. Click
-**Use this template** on GitHub, or:
-
-```bash
-git clone https://github.com/YIbaikaishui/fastapi-fastgen-starter my-app
-cd my-app && uv sync && uv run alembic upgrade head && uv run uvicorn src.main:app --reload
-```
-
-**Or scaffold from scratch anywhere, with zero install** (`uvx` runs fastgen
-without installing anything):
+**Pick a layout, get a project** — `fastgen new` asks which layout, then
+`git clone`s it (nunu-style):
 
 ```bash
 uvx fastgen-cli new my-app
+```
+
+- **advanced** — worked CRUD example (note module), recommended
+- **basic** — minimal project, empty registry
+- **local** — the built-in scaffold: instant, offline, no git needed
+
+Skip the prompt with `--layout advanced|basic|local`:
+
+```bash
+uvx fastgen-cli new my-app --layout advanced
 cd my-app && uv sync && uv run alembic upgrade head && uv run uvicorn src.main:app --reload
+```
+
+**Browse the layouts on GitHub directly** (they are just repos — clone or
+click *Use this template*):
+[advanced](https://github.com/YIbaikaishui/fastgen-layout-advanced) ·
+[basic](https://github.com/YIbaikaishui/fastgen-layout-basic)
+
+**Use your own layout** — point at any git repo (fork, company standard,
+mirror):
+
+```bash
+uvx fastgen-cli new my-app -r https://gitee.com/your-org/fastgen-layout-advanced.git
 ```
 
 **Add a module whenever** — one command, `main.py` never touched:
@@ -352,6 +364,8 @@ The others generate **more for you**: FastKit's full CRUD router, Gondola's mail
 | --- | --- | --- |
 | `--dir <path>` / `-d` | `new`, `make module`, `init alembic`, `list` | Target project root (default: current dir) |
 | `--title <name>` | `new` | Human-readable app title (defaults to the project name) |
+| `--layout <name>` | `new` | Layout: `advanced`, `basic`, `local`, or a git URL/path (prompts in a terminal) |
+| `--repo <url>` / `-r` | `new` | Shorthand for `--layout <url>` — clone any layout repository |
 | `--description <text>` | `new` | Short project description |
 | `--dry-run` | `new`, `make module`, `init alembic` | Preview files without writing anything |
 | `--force` / `-f` | `new`, `make module` | Overwrite existing files |
@@ -376,6 +390,7 @@ The others generate **more for you**: FastKit's full CRUD router, Gondola's mail
 - [x] Module registry + `fastgen list`
 - [x] Alembic migrations (`init alembic`, autogenerate, upgrade)
 - [x] AI agent integration — `codex`/`opencode` fill the scaffolds (`--ai`), fastgen verifies and reconciles
+- [ ] More layouts — auth-ready, task-queue, microservice (each its own repo, like nunu)
 - [ ] `make resource` — full CRUD router generation
 
 ---

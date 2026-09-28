@@ -72,21 +72,33 @@ cargo install fastgen-cli    # 从 crates.io 安装（需要 Rust 工具链）
 
 ## 🚀 快速开始
 
-**最快——从模板开始**（什么都不用装，clone 即用）：
-[fastapi-fastgen-starter](https://github.com/YIbaikaishui/fastapi-fastgen-starter)
-——一个带完整示例模块、可直接运行的 FastAPI 项目。在 GitHub 点
-**Use this template**，或：
-
-```bash
-git clone https://github.com/YIbaikaishui/fastapi-fastgen-starter my-app
-cd my-app && uv sync && uv run alembic upgrade head && uv run uvicorn src.main:app --reload
-```
-
-**或者从零 Scaffold，零安装**（`uvx` 直接运行，不落盘）：
+**选一个 layout，拿到项目**——`fastgen new` 先问用哪个 layout，然后 `git clone`
+下来（nunu 模式）：
 
 ```bash
 uvx fastgen-cli new my-app
+```
+
+- **advanced**——带完整 CRUD 示例模块，推荐
+- **basic**——最小项目，注册表为空
+- **local**——内置脚手架：瞬时、离线、不需要 git
+
+用 `--layout` 跳过交互：
+
+```bash
+uvx fastgen-cli new my-app --layout advanced
 cd my-app && uv sync && uv run alembic upgrade head && uv run uvicorn src.main:app --reload
+```
+
+**直接在 GitHub 上浏览 layout**（它们就是普通仓库——clone 或点
+*Use this template*）：
+[advanced](https://github.com/YIbaikaishui/fastgen-layout-advanced) ·
+[basic](https://github.com/YIbaikaishui/fastgen-layout-basic)
+
+**用自己的 layout**——指向任何 git 仓库（fork、公司规范、镜像）：
+
+```bash
+uvx fastgen-cli new my-app -r https://gitee.com/your-org/fastgen-layout-advanced.git
 ```
 
 **随时加模块**——一条命令，`main.py` 永远不用手改：
@@ -345,6 +357,8 @@ uv run alembic downgrade -1               # 回滚一步
 | --- | --- | --- |
 | `--dir <path>` / `-d` | `new`、`make module`、`init alembic`、`list` | 目标项目根目录（默认当前目录） |
 | `--title <name>` | `new` | 人类可读的应用标题（默认取项目名） |
+| `--layout <名称>` | `new` | layout：`advanced`、`basic`、`local` 或 git URL/路径（终端里交互选择） |
+| `--repo <url>` / `-r` | `new` | `--layout <url>` 的简写——clone 任何 layout 仓库 |
 | `--description <text>` | `new` | 简短的项目描述 |
 | `--ai <规格>` | `new`、`make module` | 交给填充骨架的 AI 智能体的自然语言描述 |
 | `--agent <名称>` | 所有命令 | 强制使用 `codex` 或 `opencode`（默认自动探测） |
@@ -371,6 +385,7 @@ uv run alembic downgrade -1               # 回滚一步
 - [x] 模块注册表 + `fastgen list`
 - [x] Alembic 迁移（`init alembic`、autogenerate、upgrade）
 - [x] AI 智能体集成 —— `codex`/`opencode` 填充骨架（`--ai`），fastgen 验证并校正
+- [ ] 更多 layout ——带鉴权、任务队列、微服务（各自独立仓库，nunu 模式）
 - [ ] `make resource` —— 完整 CRUD 路由生成
 
 ---

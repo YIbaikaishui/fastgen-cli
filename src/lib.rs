@@ -4,6 +4,7 @@ pub mod agent;
 pub mod cli;
 pub mod generators;
 pub mod layout;
+pub mod layouts;
 pub mod naming;
 pub mod prompt;
 pub mod reconcile;

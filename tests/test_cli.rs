@@ -55,3 +55,59 @@ fn test_new_then_make_module() {
     assert_eq!(listed.len(), 1);
     assert_eq!(listed[0].1, "src.modules.user");
 }
+
+#[test]
+fn test_new_clones_custom_layout_repo() {
+    // A fake layout repo on disk; git clone works with plain paths.
+    let layout = tempfile::tempdir().unwrap();
+    std::fs::write(
+        layout.path().join("pyproject.toml"),
+        "[project]\nname = \"starter\"\n",
+    )
+    .unwrap();
+    std::fs::create_dir_all(layout.path().join("src").join("modules")).unwrap();
+    std::fs::write(layout.path().join("src").join("main.py"), "app = None\n").unwrap();
+    for args in [
+        vec!["init", "-q", "-b", "main"],
+        vec!["add", "-A"],
+        vec![
+            "-c",
+            "user.name=t",
+            "-c",
+            "user.email=t@t",
+            "commit",
+            "-q",
+            "-m",
+            "l",
+        ],
+    ] {
+        assert!(std::process::Command::new("git")
+            .args(&args)
+            .current_dir(layout.path())
+            .status()
+            .unwrap()
+            .success());
+    }
+
+    let tmp = tempfile::tempdir().unwrap();
+    run_with([
+        "fastgen",
+        "new",
+        "my-app",
+        "--dir",
+        path_str(tmp.path()),
+        "--layout",
+        layout.path().to_str().unwrap(),
+    ])
+    .unwrap();
+
+    let root = tmp.path().join("my-app");
+    assert!(root.join("src").join("main.py").exists());
+    assert!(
+        !root.join(".git").exists(),
+        "layout history must not be kept"
+    );
+    assert!(root.join(".fastgen.json").exists());
+    let pyproject = std::fs::read_to_string(root.join("pyproject.toml")).unwrap();
+    assert!(pyproject.contains("name = \"my_app\""));
+}
