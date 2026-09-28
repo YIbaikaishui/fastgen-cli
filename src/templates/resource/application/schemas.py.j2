@@ -1,0 +1,40 @@
+{% for line in schema_import_lines %}
+{{ line }}
+{% endfor %}
+
+
+class {{ pascal }}Base(BaseModel):
+    """Shared {{ pascal }} fields."""
+{% for field in fields %}
+    {{ field.name }}: {{ field.annotation }}{{ field.default }}
+{% endfor %}
+
+
+class {{ pascal }}Create({{ pascal }}Base):
+    """Payload for creating a {{ snake }}."""
+
+
+class {{ pascal }}Update(BaseModel):
+    """Payload for updating a {{ snake }}. Every field is optional."""
+
+    model_config = ConfigDict(extra="forbid")
+{% for field in fields %}
+    {{ field.name }}: {{ field.update_annotation }} = None
+{% endfor %}
+
+
+class {{ pascal }}Read({{ pascal }}Base):
+    """Response schema. ``from_attributes`` lets FastAPI serialize ORM objects."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+
+
+class {{ pascal }}Page(BaseModel):
+    """Offset-paginated page of {{ plural }}."""
+
+    total: int
+    limit: int
+    offset: int
+    items: list[{{ pascal }}Read]

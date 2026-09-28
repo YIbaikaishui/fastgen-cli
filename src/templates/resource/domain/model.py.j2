@@ -1,0 +1,14 @@
+{% for line in import_lines %}
+{{ line }}
+{% endfor %}
+
+
+class {{ pascal }}(Base):
+    """{{ pascal }} entity."""
+
+    __tablename__ = "{{ plural }}"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+{% for field in fields %}
+    {{ field.name }}: Mapped[{{ field.annotation }}] = {{ field.column }}
+{% endfor %}

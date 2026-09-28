@@ -105,6 +105,71 @@ pub const TEMPLATES: &[TemplateFile] = &[
         content: include_str!("templates/module/tests/test_{{ snake }}.py.j2"),
     },
     TemplateFile {
+        dir: "resource",
+        rel: "__init__.py.j2",
+        content: include_str!("templates/resource/__init__.py.j2"),
+    },
+    TemplateFile {
+        dir: "resource",
+        rel: "api/__init__.py.j2",
+        content: include_str!("templates/resource/api/__init__.py.j2"),
+    },
+    TemplateFile {
+        dir: "resource",
+        rel: "api/router.py.j2",
+        content: include_str!("templates/resource/api/router.py.j2"),
+    },
+    TemplateFile {
+        dir: "resource",
+        rel: "application/__init__.py.j2",
+        content: include_str!("templates/resource/application/__init__.py.j2"),
+    },
+    TemplateFile {
+        dir: "resource",
+        rel: "application/schemas.py.j2",
+        content: include_str!("templates/resource/application/schemas.py.j2"),
+    },
+    TemplateFile {
+        dir: "resource",
+        rel: "application/{{ snake }}_service.py.j2",
+        content: include_str!("templates/resource/application/{{ snake }}_service.py.j2"),
+    },
+    TemplateFile {
+        dir: "resource",
+        rel: "domain/__init__.py.j2",
+        content: include_str!("templates/resource/domain/__init__.py.j2"),
+    },
+    TemplateFile {
+        dir: "resource",
+        rel: "domain/model.py.j2",
+        content: include_str!("templates/resource/domain/model.py.j2"),
+    },
+    TemplateFile {
+        dir: "resource",
+        rel: "domain/repository.py.j2",
+        content: include_str!("templates/resource/domain/repository.py.j2"),
+    },
+    TemplateFile {
+        dir: "resource",
+        rel: "infrastructure/__init__.py.j2",
+        content: include_str!("templates/resource/infrastructure/__init__.py.j2"),
+    },
+    TemplateFile {
+        dir: "resource",
+        rel: "infrastructure/{{ snake }}_repository.py.j2",
+        content: include_str!("templates/resource/infrastructure/{{ snake }}_repository.py.j2"),
+    },
+    TemplateFile {
+        dir: "resource",
+        rel: "tests/conftest.py.j2",
+        content: include_str!("templates/resource/tests/conftest.py.j2"),
+    },
+    TemplateFile {
+        dir: "resource",
+        rel: "tests/test_{{ snake }}.py.j2",
+        content: include_str!("templates/resource/tests/test_{{ snake }}.py.j2"),
+    },
+    TemplateFile {
         dir: "project",
         rel: ".env.example.j2",
         content: include_str!("templates/project/.env.example.j2"),

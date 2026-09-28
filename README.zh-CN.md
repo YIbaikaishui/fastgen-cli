@@ -276,6 +276,51 @@ async def list_users(session: SessionDep) -> list[User]:
 
 ---
 
+### `fastgen make resource <name>`
+
+`make module` 给你的是**骨架**——形状有了，payload 处理留给你。`make resource` 给你的是
+**做完的 CRUD**：声明字段，生成的代码直接能跑，测试都给你写好。
+
+```bash
+fastgen make resource product --fields "title:str, price:decimal, stock:int, active:bool?, launched:date?"
+```
+
+| 字段类型 | SQLAlchemy 列 | Python 类型 |
+|---|---|---|
+| `str` | `String(255)` | `str` |
+| `text` | `Text` | `str` |
+| `int` | `Integer` | `int` |
+| `float` | `Float` | `float` |
+| `decimal` | `Numeric(12, 2)` | `Decimal` |
+| `bool` | `Boolean` | `bool` |
+| `datetime` | `DateTime(timezone=True)` | `datetime` |
+| `date` | `Date` | `date` |
+| `uuid` | `Uuid`（自动生成） | `UUID` |
+
+后缀 `?` 表示**可选**：列可空、schema 为 `X | None`。完全不写 `--fields` 就默认给一个
+`name: str` 字段。
+
+比 `make module` 多的东西：
+
+- 模型上**真实存在的列**，来自你的声明。
+- **真的会映射 payload 的 service**——`create` 用请求体构造实体，`update` 只写入你
+  真正传了的字段。
+- **偏移分页**——`GET /products?limit=20&offset=0` 返回 `{total, limit, offset, items}`，
+  并且 `limit` 有上限，手滑的 `?limit=100000` 会得到 422 而不是全表扫描。
+- **一组全绿的测试**：create → 读 → 改 → 删 的完整闭环、分页、404、payload 校验。
+
+```console
+$ uv run pytest
+.......                                                    [100%]
+7 passed
+```
+
+resource 和 module 一样放在 `<src>/modules/<name>/`，所以注册表、自动挂载、`fastgen list`、
+`fastgen doctor` 全都照常生效。因为 resource 严格优于骨架，
+`make resource <name> --force` 可以原地把已有 module 升级成 resource。
+
+---
+
 ## 🔁 迁移（Alembic）
 
 `fastgen new` 内置 Alembic 脚手架（`alembic.ini` + `migrations/`），已接好你的配置和
@@ -369,6 +414,7 @@ fastgen doctor --json     # 给脚本和 CI
 | --- | --- |
 | `fastgen new <name>` | 脚手架一个新的最佳实践 `src/` 布局 FastAPI 项目（core + 注册表 + tests + Alembic） |
 | `fastgen make module <feature>` | 生成垂直切片模块骨架（domain / application / infrastructure / api / tests）、自动挂载路由并登记注册表 |
+| `fastgen make resource <name> --fields "title:str, price:decimal"` | 生成**能直接跑**的 CRUD（真实字段、payload 映射、分页、附带的测试全绿）并登记注册表 |
 | `fastgen init alembic` | 给已有项目添加 Alembic 迁移脚手架（幂等） |
 | `fastgen list` | 列出已注册模块、import 路径和用途 |
 | `fastgen doctor [--fix] [--strict] [--json]` | 检查结构漂移（失效注册项、未登记模块、缺失自动挂载、语法错误）；有错误时退出码 1——可用于 CI 卡点 |
@@ -378,15 +424,15 @@ fastgen doctor --json     # 给脚本和 CI
 
 | 参数 | 适用命令 | 说明 |
 | --- | --- | --- |
-| `--dir <path>` / `-d` | `new`、`make module`、`init alembic`、`list` | 目标项目根目录（默认当前目录） |
+| `--dir <path>` / `-d` | `new`、`make module`、`make resource`、`init alembic`、`list`、`doctor` | 目标项目根目录（默认当前目录） |
 | `--title <name>` | `new` | 人类可读的应用标题（默认取项目名） |
 | `--layout <名称>` | `new` | layout：`advanced`、`basic`、`local` 或 git URL/路径（终端里交互选择） |
 | `--repo <url>` / `-r` | `new` | `--layout <url>` 的简写——clone 任何 layout 仓库 |
 | `--description <text>` | `new` | 简短的项目描述 |
 | `--ai <规格>` | `new`、`make module` | 交给填充骨架的 AI 智能体的自然语言描述 |
 | `--agent <名称>` | 所有命令 | 强制使用 `codex` 或 `opencode`（默认自动探测） |
-| `--dry-run` | `new`、`make module`、`init alembic` | 预览将要生成的文件，不写入任何内容（不启动智能体） |
-| `--force` / `-f` | `new`、`make module` | 覆盖已存在的文件 |
+| `--dry-run` | `new`、`make module`、`make resource`、`init alembic` | 预览将要生成的文件，不写入任何内容（不启动智能体） |
+| `--force` / `-f` | `new`、`make module`、`make resource` | 覆盖已存在的文件 |
 
 ---
 
@@ -408,8 +454,9 @@ fastgen doctor --json     # 给脚本和 CI
 - [x] 模块注册表 + `fastgen list`
 - [x] Alembic 迁移（`init alembic`、autogenerate、upgrade）
 - [x] AI 智能体集成 —— `codex`/`opencode` 填充骨架（`--ai`），fastgen 验证并校正
-- [ ] 更多 layout ——带鉴权、任务队列、微服务（各自独立仓库，nunu 模式）
-- [ ] `make resource` —— 完整 CRUD 路由生成
+- [x] 更多 layout ——`advanced`、`auth`、`basic`（各自独立仓库，nunu 模式）
+- [x] `make resource` —— 真实字段 + 分页 + 全绿测试的完整 CRUD
+- [ ] 更多 layout ——任务队列、微服务
 
 ---
 

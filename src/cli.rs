@@ -143,6 +143,30 @@ enum MakeCommands {
         #[arg(long, short = 'f')]
         force: bool,
     },
+    /// Generate a **working** CRUD resource and register it.
+    ///
+    /// Unlike `make module` (a skeleton to fill in), a resource is complete:
+    /// real columns from `--fields`, a service that maps payloads onto the
+    /// entity, offset pagination, and a test suite that exercises the whole
+    /// CRUD loop.
+    Resource {
+        /// Resource name, e.g. product
+        name: String,
+        /// Target project root.
+        #[arg(long, short = 'd', default_value = ".")]
+        dir: PathBuf,
+        /// Comma-separated `name:type` fields. Types: str, text, int, float,
+        /// decimal, bool, datetime, date, uuid. Add `?` to make one optional,
+        /// e.g. "title:str, price:float, active:bool?". Defaults to "name:str".
+        #[arg(long, value_name = "SPEC")]
+        fields: Option<String>,
+        /// Preview files without writing.
+        #[arg(long)]
+        dry_run: bool,
+        /// Overwrite existing files.
+        #[arg(long, short = 'f')]
+        force: bool,
+    },
 }
 
 #[derive(Subcommand)]
@@ -374,13 +398,27 @@ fn cmd_new(
 }
 
 fn cmd_make(command: &MakeCommands, selection: &AgentSelection) -> anyhow::Result<()> {
-    let MakeCommands::Module {
-        feature,
+    if let MakeCommands::Resource {
+        name,
         dir,
-        ai,
+        fields,
         dry_run,
         force,
-    } = command;
+    } = command
+    {
+        return cmd_make_resource(name, dir, fields.as_deref(), *dry_run, *force);
+    }
+    let (feature, dir, ai, dry_run, force) = match command {
+        MakeCommands::Module {
+            feature,
+            dir,
+            ai,
+            dry_run,
+            force,
+        } => (feature, dir, ai, dry_run, force),
+        // Handled by the early return above; keeps the match exhaustive.
+        MakeCommands::Resource { .. } => unreachable!("resource handled above"),
+    };
     let dir = resolve_dir(dir);
     let mut files = module_gen::generate_module(feature, &dir, None, *force, *dry_run)?;
     files.extend(core::generate_core(&dir, None, *dry_run)?);
@@ -407,6 +445,39 @@ fn cmd_make(command: &MakeCommands, selection: &AgentSelection) -> anyhow::Resul
     let prompt = prompt::build_module_prompt(feature, &source, &dir, Some(spec))?;
     let module_root = dir.join(&source).join("modules").join(to_snake(feature));
     run_agent_flow(selection, &prompt, &dir, &module_root)
+}
+
+/// `fastgen make resource` — a complete CRUD slice, no agent involved: the whole
+/// point is that the generated code is deterministic and already working.
+fn cmd_make_resource(
+    name: &str,
+    dir: &Path,
+    fields: Option<&str>,
+    dry_run: bool,
+    force: bool,
+) -> anyhow::Result<()> {
+    use crate::generators::resource::generate_resource;
+
+    let dir = resolve_dir(dir);
+    let mut files = generate_resource(name, &dir, None, fields, force, dry_run)?;
+    files.extend(core::generate_core(&dir, None, dry_run)?);
+    files.push(registry_gen::register_module(&dir, name, None, dry_run)?);
+    files.push(main_sync::sync_main(&dir, None, dry_run)?);
+    report(&files, dry_run);
+    let skipped = files.iter().filter(|f| f.status == Status::Skipped).count();
+    if skipped > 0 && !force {
+        anstream::println!(
+            "{}",
+            format!("{skipped} file(s) already exist. Re-run with --force to overwrite.").yellow()
+        );
+    }
+    if !dry_run {
+        anstream::println!(
+            "{}",
+            format!("{name}: CRUD ready — run `uv run pytest` to see it work.").cyan()
+        );
+    }
+    Ok(())
 }
 
 fn cmd_init(command: &InitCommands) -> anyhow::Result<()> {

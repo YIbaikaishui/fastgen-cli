@@ -1,0 +1,66 @@
+"""{{ pascal }} application service (use cases)."""
+
+from {{ source }}.modules.{{ snake }}.application.schemas import (
+    {{ pascal }}Create,
+    {{ pascal }}Page,
+    {{ pascal }}Read,
+    {{ pascal }}Update,
+)
+from {{ source }}.modules.{{ snake }}.domain.model import {{ pascal }}
+from {{ source }}.modules.{{ snake }}.domain.repository import {{ pascal }}Repository
+
+
+class {{ pascal }}Error(Exception):
+    """Base exception for the {{ kebab }} domain. Raise subclasses from the service."""
+
+
+class {{ pascal }}NotFound({{ pascal }}Error):
+    """Raised when the requested {{ snake }} does not exist."""
+
+
+class {{ pascal }}Service:
+    """Application service for {{ kebab }} use cases. Free of HTTP concerns."""
+
+    def __init__(self, repository: {{ pascal }}Repository) -> None:
+        self._entities = repository
+
+    @classmethod
+    def from_repository(cls, repository: {{ pascal }}Repository) -> "{{ pascal }}Service":
+        return cls(repository)
+
+    async def create(self, data: {{ pascal }}Create) -> {{ pascal }}Read:
+        entity = {{ pascal }}(**data.model_dump(exclude_unset=True))
+        return self._to_read(await self._entities.add(entity))
+
+    async def list(self, *, limit: int, offset: int) -> {{ pascal }}Page:
+        entities = await self._entities.list(limit=limit, offset=offset)
+        return {{ pascal }}Page(
+            total=await self._entities.count(),
+            limit=limit,
+            offset=offset,
+            items=[self._to_read(entity) for entity in entities],
+        )
+
+    async def get(self, item_id: int) -> {{ pascal }}Read:
+        entity = await self._entities.get(item_id)
+        if entity is None:
+            raise {{ pascal }}NotFound()
+        return self._to_read(entity)
+
+    async def update(self, item_id: int, data: {{ pascal }}Update) -> {{ pascal }}Read:
+        entity = await self._entities.get(item_id)
+        if entity is None:
+            raise {{ pascal }}NotFound()
+        for field, value in data.model_dump(exclude_unset=True).items():
+            setattr(entity, field, value)
+        return self._to_read(await self._entities.add(entity))
+
+    async def delete(self, item_id: int) -> None:
+        entity = await self._entities.get(item_id)
+        if entity is None:
+            raise {{ pascal }}NotFound()
+        await self._entities.delete(entity)
+
+    @staticmethod
+    def _to_read(entity: {{ pascal }}) -> {{ pascal }}Read:
+        return {{ pascal }}Read.model_validate(entity)

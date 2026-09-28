@@ -3,6 +3,7 @@
 pub mod agent;
 pub mod cli;
 pub mod doctor;
+pub mod fields;
 pub mod generators;
 pub mod layout;
 pub mod layouts;

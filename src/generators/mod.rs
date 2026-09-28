@@ -6,3 +6,4 @@ pub mod main;
 pub mod module;
 pub mod project;
 pub mod registry;
+pub mod resource;

@@ -281,6 +281,56 @@ async def list_users(session: SessionDep) -> list[User]:
 
 ---
 
+### `fastgen make resource <name>`
+
+`make module` gives you a **skeleton** — the shape, with the payload handling left
+for you. `make resource` gives you a **finished CRUD**: declare the fields and the
+generated code actually works, tests included.
+
+```bash
+fastgen make resource product --fields "title:str, price:decimal, stock:int, active:bool?, launched:date?"
+```
+
+| Field type | SQLAlchemy column | Python type |
+|---|---|---|
+| `str` | `String(255)` | `str` |
+| `text` | `Text` | `str` |
+| `int` | `Integer` | `int` |
+| `float` | `Float` | `float` |
+| `decimal` | `Numeric(12, 2)` | `Decimal` |
+| `bool` | `Boolean` | `bool` |
+| `datetime` | `DateTime(timezone=True)` | `datetime` |
+| `date` | `Date` | `date` |
+| `uuid` | `Uuid` (auto-generated) | `UUID` |
+
+A `?` suffix makes a field **optional** — a nullable column, an `X | None` schema
+field, and it's left out of nothing (it still gets exercised by the tests).
+Omit `--fields` entirely and you get a single `name: str` field.
+
+What you get beyond `make module`:
+
+- **Real columns** on the model, from your spec.
+- **A service that maps payloads** — `create` builds the entity from the request body
+  and `update` applies only the fields you actually sent.
+- **Offset pagination** — `GET /products?limit=20&offset=0` returns
+  `{total, limit, offset, items}`, with `limit` bounded so an accidental
+  `?limit=100000` is a 422 instead of a full table scan.
+- **A passing test suite** that walks the whole loop: create → read → update → delete,
+  pagination, 404s and payload validation.
+
+```console
+$ uv run pytest
+.......                                                    [100%]
+7 passed
+```
+
+Resources live in `<src>/modules/<name>/` like modules do, so the registry,
+auto-mount, `fastgen list` and `fastgen doctor` work on them unchanged. And because
+they're strictly better than the skeleton, `make resource <name> --force` upgrades
+an existing module in place.
+
+---
+
 ## 🔁 Migrations (Alembic)
 
 `fastgen new` ships Alembic scaffolding (`alembic.ini` + `migrations/`) wired to your
@@ -378,6 +428,7 @@ The others generate **more for you**: FastKit's full CRUD router, Gondola's mail
 | --- | --- |
 | `fastgen new <name>` | Scaffold a new best-practice `src/`-layout FastAPI project (core + registry + tests + Alembic) |
 | `fastgen make module <feature>` | Scaffold a feature module (model / schemas / service / router / tests), auto-mount its router, register it |
+| `fastgen make resource <name> --fields "title:str, price:decimal"` | Generate a **working** CRUD (real columns, payload mapping, pagination, passing tests) and register it |
 | `fastgen init alembic` | Add Alembic migration scaffolding to an existing project (idempotent) |
 | `fastgen list` | List registered modules, import paths, and purposes |
 | `fastgen doctor [--fix] [--strict] [--json]` | Check structure drift (stale registry entries, unmounted modules, missing auto-mount, syntax errors); exit code 1 on errors — CI-gateable |
@@ -387,13 +438,13 @@ The others generate **more for you**: FastKit's full CRUD router, Gondola's mail
 
 | Flag | Applies to | Description |
 | --- | --- | --- |
-| `--dir <path>` / `-d` | `new`, `make module`, `init alembic`, `list` | Target project root (default: current dir) |
+| `--dir <path>` / `-d` | `new`, `make module`, `make resource`, `init alembic`, `list`, `doctor` | Target project root (default: current dir) |
 | `--title <name>` | `new` | Human-readable app title (defaults to the project name) |
 | `--layout <name>` | `new` | Layout: `advanced`, `basic`, `local`, or a git URL/path (prompts in a terminal) |
 | `--repo <url>` / `-r` | `new` | Shorthand for `--layout <url>` — clone any layout repository |
 | `--description <text>` | `new` | Short project description |
-| `--dry-run` | `new`, `make module`, `init alembic` | Preview files without writing anything |
-| `--force` / `-f` | `new`, `make module` | Overwrite existing files |
+| `--dry-run` | `new`, `make module`, `make resource`, `init alembic` | Preview files without writing anything |
+| `--force` / `-f` | `new`, `make module`, `make resource` | Overwrite existing files |
 
 ---
 
@@ -415,8 +466,9 @@ The others generate **more for you**: FastKit's full CRUD router, Gondola's mail
 - [x] Module registry + `fastgen list`
 - [x] Alembic migrations (`init alembic`, autogenerate, upgrade)
 - [x] AI agent integration — `codex`/`opencode` fill the scaffolds (`--ai`), fastgen verifies and reconciles
-- [ ] More layouts — auth-ready, task-queue, microservice (each its own repo, like nunu)
-- [ ] `make resource` — full CRUD router generation
+- [x] More layouts — `advanced`, `auth` and `basic`, each its own repo (like nunu)
+- [x] `make resource` — full CRUD with real fields, pagination and passing tests
+- [ ] More layouts — task-queue, microservice
 
 ---
 
